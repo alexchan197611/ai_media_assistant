@@ -59,7 +59,7 @@ ai_caption_video/
 Install Python dependencies:
 
 ```powershell
-cd D:\Codex\workspaces\ai_caption_video
+cd D:\ai_caption_video
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -105,13 +105,13 @@ Qwen3-TTS is treated as an external local engine. The app calls the Python runti
 Default expected directory:
 
 ```text
-E:\Qwen3-TTS-1.7B\Qwen3-TTS-1.7B
+\Qwen3-TTS-1.7B\Qwen3-TTS-1.7B
 ```
 
 The app expects:
 
 ```text
-E:\Qwen3-TTS-1.7B\Qwen3-TTS-1.7B\conda_env\python.exe
+\Qwen3-TTS-1.7B\Qwen3-TTS-1.7B\conda_env\python.exe
 ```
 
 ## F5-TTS
@@ -121,7 +121,7 @@ F5-TTS is also treated as an external local engine.
 Suggested clone location:
 
 ```text
-D:\Codex\workspaces\F5-TTS
+\F5-TTS
 ```
 
 Clone manually:
@@ -140,8 +140,8 @@ After setup, configure the GUI:
 
 ```text
 TTS engine: F5-TTS
-F5 project: D:\Codex\workspaces\F5-TTS
-F5 Python: D:\Codex\workspaces\F5-TTS\.venv\Scripts\python.exe
+F5 project:\F5-TTS
+F5 Python: \F5-TTS\.venv\Scripts\python.exe
 Reference audio: your voice sample
 Reference text: exact text spoken in the reference audio
 ```
@@ -157,7 +157,7 @@ F5-TTS generally requires a reference audio and matching reference text for stab
 The build output is written outside the repository:
 
 ```text
-D:\Codex\outputs\ai_caption_video_exe\ai_caption_video.exe
+\ai_caption_video_exe\ai_caption_video.exe
 ```
 
 The EXE does not include TTS model weights.
