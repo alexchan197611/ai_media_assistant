@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Build artifacts
+build/
+dist/
+*.spec
+*.egg-info/
+
+# Generated media and user assets
+output/*
+!output/.gitkeep
+assets/*
+!assets/.gitkeep
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wav
+*.mp3
+*.flac
+*.m4a
+
+# Local settings, logs, and cache
+.env
+.env.*
+*.log
+ai_caption_video_settings.json
+D:/Codex/cache/
+D:/Codex/outputs/
+
+# External model repositories / weights
+models/
+checkpoints/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
