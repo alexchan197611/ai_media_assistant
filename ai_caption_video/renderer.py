@@ -14,6 +14,7 @@ from .font_utils import load_font
 class TextToken:
     text: str
     highlighted: bool
+    color: tuple[int, int, int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,59 @@ class CaptionRenderer:
         x = (self.config.width - caption.width) // 2 + transform.offset_x
         y = (self.config.height - caption.height) // 2 + transform.offset_y
         frame.paste(caption, (x, y), caption)
+        return np.array(frame)
+
+    def frame_queue(
+        self,
+        segments: tuple[tuple[TextToken, ...], ...],
+        index: int,
+        t: float,
+        duration: float,
+    ) -> np.ndarray:
+        frame = Image.new("RGB", (self.config.width, self.config.height), self.config.background_color)
+        layer = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+
+        intro = min(1.0, t / max(0.001, self.config.intro_duration))
+        outro_start = max(self.config.intro_duration, duration - self.config.outro_duration)
+        outro = min(max((t - outro_start) / max(0.001, self.config.outro_duration), 0.0), 1.0)
+        intro_eased = ease_out_cubic(intro)
+        outro_eased = ease_out_cubic(outro)
+
+        for slot, prev_index in enumerate(range(max(0, index - 2), index)):
+            distance = index - prev_index
+            caption = self._render_caption_tokens(segments[prev_index], 1.0)
+            scale = 0.58 - 0.12 * min(distance - 1, 1)
+            x = int(self.config.width * (0.05 + 0.10 * slot))
+            y = int(self.config.height * (0.20 + 0.16 * slot - 0.05 * intro_eased))
+            opacity = 0.62 if distance == 1 else 0.38
+            self._paste_transformed(layer, caption, x, y, scale, opacity, rotation=-90)
+
+        for slot, next_index in enumerate(range(index + 1, min(len(segments), index + 3))):
+            caption = self._render_caption_tokens(segments[next_index], 1.0)
+            scale = 0.54 - 0.08 * slot
+            x = int(self.config.width * 0.50)
+            y = int(self.config.height * (0.76 + 0.10 * slot - 0.035 * intro_eased - 0.06 * outro_eased))
+            opacity = 0.58 if slot == 0 else 0.34
+            self._paste_transformed(layer, caption, x, y, scale, opacity, anchor="center")
+
+        current = self._render_caption_tokens(segments[index], self._highlight_pulse(t, duration))
+        if outro > 0:
+            scale = 1.0 - 0.45 * outro_eased
+            x = int(self.config.width * (0.50 - 0.38 * outro_eased))
+            y = int(self.config.height * (0.47 - 0.18 * outro_eased))
+            rotation = -90 * outro_eased
+            opacity = 1.0 - 0.22 * outro_eased
+        else:
+            pop = 0.82 + 0.22 * intro_eased
+            settle = 1.0 + 0.04 * math.sin(min(1.0, intro) * math.pi)
+            scale = pop * settle
+            x = int(self.config.width * 0.50)
+            y = int(self.config.height * (0.48 - 0.035 * (1.0 - intro_eased)))
+            rotation = 0.0
+            opacity = 1.0
+        self._paste_transformed(layer, current, x, y, scale, opacity, rotation=rotation, anchor="center")
+
+        frame = Image.alpha_composite(frame.convert("RGBA"), layer).convert("RGB")
         return np.array(frame)
 
     def _caption_transform(self, t: float, duration: float, transition: str) -> CaptionTransform:
@@ -136,7 +190,7 @@ class CaptionRenderer:
                 slot_font = self._layout_font_for(token.highlighted)
                 slot_width = self._text_width(token.text, slot_font)
                 font = self._draw_font_for(token.highlighted, pulse)
-                color = self.config.highlight_color if token.highlighted else self.config.text_color
+                color = self.config.highlight_color if token.highlighted else (token.color or self.config.text_color)
                 bbox = draw.textbbox((0, 0), token.text, font=font)
                 text_width = bbox[2] - bbox[0]
                 text_height = bbox[3] - bbox[1]
@@ -146,6 +200,33 @@ class CaptionRenderer:
                 x += slot_width
             y += line_height + self.config.line_spacing
         return image
+
+    def _paste_transformed(
+        self,
+        layer: Image.Image,
+        caption: Image.Image,
+        x: int,
+        y: int,
+        scale: float,
+        opacity: float,
+        rotation: float = 0.0,
+        anchor: str = "topleft",
+    ) -> None:
+        scale = max(0.05, scale)
+        transformed = caption.resize(
+            (max(1, int(caption.width * scale)), max(1, int(caption.height * scale))),
+            Image.Resampling.LANCZOS,
+        )
+        if rotation:
+            transformed = transformed.rotate(rotation, resample=Image.Resampling.BICUBIC, expand=True)
+        if opacity < 1.0:
+            alpha = transformed.getchannel("A")
+            alpha = alpha.point(lambda value: int(value * max(0.0, min(1.0, opacity))))
+            transformed.putalpha(alpha)
+        if anchor == "center":
+            x -= transformed.width // 2
+            y -= transformed.height // 2
+        layer.paste(transformed, (x, y), transformed)
 
     @lru_cache(maxsize=256)
     def _layout_tokens(
@@ -187,16 +268,22 @@ class CaptionRenderer:
                 if lines[-1] and current_width + char_width > max_width:
                     lines.append([])
                     current_width = 0
-                self._append_char(lines[-1], char, token.highlighted)
+                self._append_char(lines[-1], char, token.highlighted, token.color)
                 current_width += char_width
 
         return [line for line in lines if line]
 
-    def _append_char(self, line: list[TextToken], char: str, highlighted: bool) -> None:
-        if line and line[-1].highlighted == highlighted:
-            line[-1] = TextToken(line[-1].text + char, highlighted)
+    def _append_char(
+        self,
+        line: list[TextToken],
+        char: str,
+        highlighted: bool,
+        color: tuple[int, int, int, int] | None = None,
+    ) -> None:
+        if line and line[-1].highlighted == highlighted and line[-1].color == color:
+            line[-1] = TextToken(line[-1].text + char, highlighted, color)
         else:
-            line.append(TextToken(char, highlighted))
+            line.append(TextToken(char, highlighted, color))
 
     def _line_size(self, line: list[TextToken]) -> tuple[int, int]:
         width = 0

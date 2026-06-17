@@ -26,6 +26,7 @@ class VideoConfig:
     outro_duration: float = 0.28
     outro_scale: float = 0.72
     heartbeat_interval_ms: int = 700
+    caption_template: str = "queue"
     bgm_volume: float = 0.30
     video_codec: str = "libx264"
     audio_codec: str = "aac"

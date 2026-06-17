@@ -7,12 +7,16 @@
 - 多行文案输入：每一行生成一个字幕片段
 - 1080x1920 竖屏黑底视频
 - 大号中文粗体字幕居中显示
+- 9:16 phone-style live preview for the current line
+- adjustable font size with real-time wrapping preview
 - 选中文字标记重点，视频中显示黄色并带心跳动效
+- per-line base color selection with keyword highlights preserved
 - 随机字幕切换动画：缩小、滑出、竖起收起、倾斜缩小等
+- rolling queue caption template: read text turns vertical, current text is enlarged, upcoming text waits below
 - 可选背景音乐，自动裁剪到视频长度并降低音量
 - 可选 TTS：
-  - Qwen3-TTS：调用本地 Qwen3-TTS 目录
-  - F5-TTS：调用外部 F5-TTS 项目，支持参考音频和参考文本
+  - Qwen3-TTS：支持预设人声、语音设计、语音克隆
+  - OmniVoice：支持自动音色、语音设计、语音克隆和原生语速控制
 - GUI 桌面界面
 - PyInstaller 打包脚本
 
@@ -20,7 +24,7 @@
 
 本仓库不包含任何 TTS 模型权重，也不分发生成的视频、音频、EXE 文件或用户配置。
 
-如果使用 Qwen3-TTS、F5-TTS 或其他模型，请自行下载模型，并遵守对应项目和模型权重的许可证。
+如果使用 Qwen3-TTS、OmniVoice 或其他模型，请自行下载模型，并遵守对应项目和模型权重的许可证。
 
 ## Project Structure
 
@@ -31,9 +35,9 @@ ai_caption_video/
     __main__.py
     cli.py
     config.py
-    f5_tts_bridge.py
     font_utils.py
     gui.py
+    omnivoice_bridge.py
     renderer.py
     text_utils.py
     tts_bridge.py
@@ -46,7 +50,6 @@ ai_caption_video/
   gui_entry.py
   input.txt
   requirements.txt
-  setup_f5_tts.ps1
 ```
 
 ## Requirements
@@ -89,7 +92,9 @@ The GUI supports:
 - selecting output directory
 - marking highlighted text
 - clearing all marks
-- Qwen3-TTS or F5-TTS engine selection
+- Qwen3-TTS or OmniVoice engine selection
+- Qwen3-TTS mode selection: preset voice, voice design, or voice clone
+- OmniVoice mode selection: auto voice, voice design, or voice clone
 - background music and custom font selection
 
 Generated videos are named with timestamps, for example:
@@ -114,39 +119,45 @@ The app expects:
 \Qwen3-TTS-1.7B\Qwen3-TTS-1.7B\conda_env\python.exe
 ```
 
-## F5-TTS
+Supported Qwen modes:
 
-F5-TTS is also treated as an external local engine.
+- 预设人声：choose from Aiden, Dylan, Eric, Ono_anna, Ryan, Serena, Sohee, Uncle_fu, Vivian
+- 语音设计：describe the desired voice, emotion, speaking style, and pace in natural language
+- 语音克隆：upload reference audio and provide the exact reference text; x-vector only mode is available but quality may be lower
 
-Suggested clone location:
+The Qwen engine runs through a persistent background worker while the GUI is open, so the first generation may be slow while the model loads, but later generations with an already loaded model are faster. Qwen speed control is intentionally not exposed because post-processing time stretch can introduce echo artifacts.
 
-```text
-\F5-TTS
-```
+## OmniVoice
 
-Clone manually:
+OmniVoice is treated as an external local engine. The GUI calls the Python runtime inside the OmniVoice project directory.
 
-```powershell
-git clone https://github.com/SWivid/F5-TTS.git D:\Codex\workspaces\F5-TTS
-```
-
-Or use the helper script:
-
-```powershell
-.\setup_f5_tts.ps1
-```
-
-After setup, configure the GUI:
+Default development location:
 
 ```text
-TTS engine: F5-TTS
-F5 project:\F5-TTS
-F5 Python: \F5-TTS\.venv\Scripts\python.exe
-Reference audio: your voice sample
-Reference text: exact text spoken in the reference audio
+D:\Codex\workspaces\OmniVoice
 ```
 
-F5-TTS generally requires a reference audio and matching reference text for stable voice cloning.
+Portable package location:
+
+```text
+models\OmniVoice
+```
+
+The app expects:
+
+```text
+models\OmniVoice\.python\python.exe
+models\OmniVoice\.venv
+models\OmniVoice\hf_cache
+```
+
+Supported OmniVoice modes:
+
+- 自动音色：generate with OmniVoice's automatic voice selection
+- 语音设计：describe the desired voice, for example `female, natural, clear`
+- 语音克隆：upload reference audio; reference text is optional because OmniVoice can auto-transcribe
+
+OmniVoice supports native speed control. The GUI exposes `speed` and `num_step`.
 
 ## Build EXE
 

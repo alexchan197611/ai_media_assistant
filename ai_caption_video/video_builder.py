@@ -73,17 +73,31 @@ def build_video_from_token_segments(
     renderer = CaptionRenderer(config, find_chinese_font(font_path), [])
     narration_clips = _load_narration_clips(narration_paths)
     transitions = _random_transitions(len(segments))
-    clips = [
-        _make_token_clip(
-            renderer,
-            segment,
-            config,
-            duration=_duration_for_segment(config, narration_clips, index),
-            narration=narration_clips[index] if index < len(narration_clips) else None,
-            transition=transitions[index],
-        )
-        for index, segment in enumerate(segments)
-    ]
+    if config.caption_template == "queue":
+        segment_tuple = tuple(tuple(segment) for segment in segments)
+        clips = [
+            _make_queue_clip(
+                renderer,
+                segment_tuple,
+                index,
+                config,
+                duration=_duration_for_segment(config, narration_clips, index),
+                narration=narration_clips[index] if index < len(narration_clips) else None,
+            )
+            for index in range(len(segments))
+        ]
+    else:
+        clips = [
+            _make_token_clip(
+                renderer,
+                segment,
+                config,
+                duration=_duration_for_segment(config, narration_clips, index),
+                narration=narration_clips[index] if index < len(narration_clips) else None,
+                transition=transitions[index],
+            )
+            for index, segment in enumerate(segments)
+        ]
     final_clip = concatenate_videoclips(clips, method="compose")
 
     bgm = _load_bgm(bgm_path, final_clip.duration, config.bgm_volume)
@@ -134,6 +148,28 @@ def _make_token_clip(
 
     def make_frame(t: float):
         return renderer.frame_tokens(token_tuple, t, clip_duration, transition=transition)
+
+    try:
+        clip = VideoClip(frame_function=make_frame, duration=clip_duration)
+    except TypeError:
+        clip = VideoClip(make_frame=make_frame, duration=clip_duration)
+    if narration is not None:
+        clip = _with_audio(clip, narration)
+    return clip
+
+
+def _make_queue_clip(
+    renderer: CaptionRenderer,
+    segments: tuple[tuple[TextToken, ...], ...],
+    index: int,
+    config: VideoConfig,
+    duration: float | None = None,
+    narration=None,
+):
+    clip_duration = duration or config.segment_duration
+
+    def make_frame(t: float):
+        return renderer.frame_queue(segments, index, t, clip_duration)
 
     try:
         clip = VideoClip(frame_function=make_frame, duration=clip_duration)
