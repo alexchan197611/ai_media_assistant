@@ -2,6 +2,12 @@
 
 一个面向中文短视频的“大字报/卡点字幕”生成工具。项目使用 Python、MoviePy、Pillow 和 FFmpeg 生成 9:16 黑底字幕视频，并支持本地 TTS 引擎按语音时长自动控制字幕片段。
 
+## Preview
+
+![AI Caption Video GUI](images/gui-main.png)
+
+[Watch demo video](images/demo.mp4)
+
 ## Features
 
 - 多行文案输入：每一行生成一个字幕片段

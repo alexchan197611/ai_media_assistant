@@ -25,6 +25,7 @@ assets/*
 *.mp3
 *.flac
 *.m4a
+!images/demo.mp4
 
 # Local settings, logs, and cache
 .env
