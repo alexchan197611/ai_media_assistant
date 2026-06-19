@@ -1,44 +1,57 @@
 # ai_caption_video
 
-一个面向中文短视频的“大字报/卡点字幕”生成工具。项目使用 Python、MoviePy、Pillow 和 FFmpeg 生成 9:16 黑底字幕视频，并支持本地 TTS 引擎按语音时长自动控制字幕片段。
+一个面向中文短视频创作者的“大字报 / 卡点字幕”生成工具。
 
-## Preview
+项目使用 Python、MoviePy、Pillow 和 FFmpeg 生成 9:16 竖屏视频，并可调用本地 TTS 模型生成配音，让字幕时长自动跟随语音。
 
-![AI Caption Video GUI](images/gui-main.png)
+当前版本：`v1.0.1`
 
-![AI Caption Video GUI](images/demo.png)[Watch demo video](images/demo.mp4)
+## 项目预览
 
-[![B 站视频演示](https://www.bilibili.com/video/BV1A9Ld6BEf8/?share_source=copy_web&vd_source=d5152d298246eb70945ccbc187b99a11)](https://www.bilibili.com/video/BV1A9Ld6BEf8)
+![软件主界面](images/gui-main.png)
 
+[![点击封面观看演示视频](images/demo.png)](images/demo.mp4)
 
-## Features
+- [直接打开演示视频 demo.mp4](images/demo.mp4)
+- [观看 B 站视频演示](https://www.bilibili.com/video/BV1A9Ld6BEf8)
 
-- 多行文案输入：每一行生成一个字幕片段
-- 1080x1920 竖屏黑底视频
-- 大号中文粗体字幕居中显示
-- 9:16 phone-style live preview for the current line
-- adjustable font size with real-time wrapping preview
-- 选中文字标记重点，视频中显示黄色并带心跳动效
-- per-line base color selection with keyword highlights preserved
-- 每句可单独绑定背景图片，未配图时自动使用黑底
+## 主要功能
+
+- 多行文案输入，每一行生成一个字幕片段
+- 1080×1920、9:16 竖屏视频
+- 大号粗体中文字幕
+- 手机比例实时预览，可查看文字换行效果
+- 支持调整字体、字号、分辨率和 FPS
+- 支持选中文字并标记为黄色重点词
+- 重点词支持心跳动效，心跳速度可调
+- 每一行可以单独设置字幕颜色
+- 每一行可以单独绑定背景图片
+- 未设置图片的字幕片段自动使用黑色背景
 - 背景图片自动裁切为 9:16，并随机应用轻微推拉和平移运镜
-- 随机字幕切换动画：缩小、滑出、竖起收起、倾斜缩小等
-- rolling queue caption template: read text turns vertical, current text is enlarged, upcoming text waits below
-- 可选背景音乐，自动裁剪到视频长度并降低音量
-- 内置音乐库支持随机选曲，并让句间切换吸附到鼓点；连续生成时尽量避免重复曲目
-- 可选 TTS：
-  - Qwen3-TTS：支持预设人声、语音设计、语音克隆
-  - OmniVoice：支持自动音色、语音设计、语音克隆和原生语速控制
-- GUI 桌面界面
-- PyInstaller 打包脚本
+- 支持“滚动队列”和“居中大字”字幕模板
+- 支持缩小、滑出、竖起、倾斜等字幕切换动画
+- 支持手动选择背景音乐
+- 支持从本地音乐库随机选曲，并让句间切换尽量贴合鼓点
+- 连续随机选曲时尽量避免重复上一首音乐
+- 支持 Qwen3-TTS 和 OmniVoice 本地 TTS
+- 支持预设人声、语音设计和语音克隆
+- 生成的视频使用时间戳命名，不覆盖历史文件
+- 提供 PyInstaller EXE 打包脚本
 
-## Important
+## 重要说明
 
-本仓库不包含任何 TTS 模型权重，也不分发生成的视频、音频、EXE 文件或用户配置。
+本源码仓库不包含以下内容：
 
-如果使用 Qwen3-TTS、OmniVoice 或其他模型，请自行下载模型，并遵守对应项目和模型权重的许可证。
+- Qwen3-TTS 模型及权重
+- OmniVoice 模型及权重
+- portable 便携整合包
+- 用户生成的视频和音频
+- 用户配置和本地缓存
+- 受许可证约束的内置 BGM 文件
 
-## Project Structure
+使用或分发第三方模型、音乐和字体前，请确认并遵守对应项目的许可证及商业使用条款。
+
+## 项目结构
 
 ```text
 ai_caption_video/
@@ -57,6 +70,10 @@ ai_caption_video/
     video_builder.py
   assets/
     .gitkeep
+    bgm_library/       # 可选的本地 BGM 音乐库
+  images/
+    gui-main.png
+    demo.mp4
   output/
     .gitkeep
   build_exe.ps1
@@ -65,14 +82,14 @@ ai_caption_video/
   requirements.txt
 ```
 
-## Requirements
+## 运行环境
 
-- Windows is the primary tested platform
-- Python 3.10+
-- FFmpeg available in `PATH`
-- A Chinese font installed on Windows, such as Microsoft YaHei
+- Windows 10 或 Windows 11
+- Python 3.10 及以上版本
+- FFmpeg
+- Windows 中文字体，例如微软雅黑
 
-Install Python dependencies:
+安装 Python 依赖：
 
 ```powershell
 cd D:\ai_caption_video
@@ -81,118 +98,138 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Run CLI
-
-```powershell
-python -m ai_caption_video
-```
-
-Example:
-
-```powershell
-python -m ai_caption_video --input input.txt --output output/video.mp4 --keywords 人工智能,短视频,关键词
-```
-
-## Run GUI
+## 启动 GUI
 
 ```powershell
 python gui_entry.py
 ```
 
-The GUI supports:
+GUI 支持：
 
-- direct multiline script input
-- selecting output directory
-- marking highlighted text
-- clearing all marks
-- assigning or clearing a background image for the current line
-- live image and caption composition preview
-- random BGM selection and beat-synced sentence transitions
-- Qwen3-TTS or OmniVoice engine selection
-- Qwen3-TTS mode selection: preset voice, voice design, or voice clone
-- OmniVoice mode selection: auto voice, voice design, or voice clone
-- background music and custom font selection
+- 直接输入或粘贴多行中文文案
+- 标记或取消重点词
+- 设置每行字幕颜色
+- 为当前行选择或清除背景图片
+- 在手机预览框中查看图片和字幕组合效果
+- 选择字幕模板
+- 手动选择 BGM，或启用“随机匹配并卡点”
+- 在 Qwen3-TTS 和 OmniVoice 之间切换
+- 选择输出目录
 
-Generated videos are named with timestamps, for example:
+生成的视频使用时间戳命名，例如：
 
 ```text
 20260616143022.mp4
 ```
 
+## 命令行运行
+
+```powershell
+python -m ai_caption_video
+```
+
+示例：
+
+```powershell
+python -m ai_caption_video --input input.txt --output output/video.mp4 --keywords 人工智能,短视频,关键词
+```
+
 ## Qwen3-TTS
 
-Qwen3-TTS is treated as an external local engine. The app calls the Python runtime inside the model project directory.
-
-Default expected directory:
+软件优先识别 EXE 同级目录下的 portable 模型：
 
 ```text
-\Qwen3-TTS-1.7B\Qwen3-TTS-1.7B
+models\Qwen3-TTS-1.7B
 ```
 
-The app expects:
+兼容旧的默认目录：
 
 ```text
-\Qwen3-TTS-1.7B\Qwen3-TTS-1.7B\conda_env\python.exe
+E:\Qwen3-TTS-1.7B\Qwen3-TTS-1.7B
 ```
 
-Supported Qwen modes:
+支持的能力：
 
-- 预设人声：choose from Aiden, Dylan, Eric, Ono_anna, Ryan, Serena, Sohee, Uncle_fu, Vivian
-- 语音设计：describe the desired voice, emotion, speaking style, and pace in natural language
-- 语音克隆：upload reference audio and provide the exact reference text; x-vector only mode is available but quality may be lower
+- **预设人声**：Aiden、Dylan、Eric、Ono_anna、Ryan、Serena、Sohee、Uncle_fu、Vivian
+- **语音设计**：通过文字描述声音、情绪和朗读风格
+- **语音克隆**：上传参考音频并填写参考文本，也可仅使用 x-vector
 
-The Qwen engine runs through a persistent background worker while the GUI is open, so the first generation may be slow while the model loads, but later generations with an already loaded model are faster. Qwen speed control is intentionally not exposed because post-processing time stretch can introduce echo artifacts.
+Qwen3-TTS 使用隐藏的常驻后台进程。第一次生成时需要加载模型，耗时较长；软件不关闭时，后续生成会复用已经加载的模型。
+
+Qwen3-TTS 暂不提供语速调整，因为后期变速可能产生回响和音质下降。
 
 ## OmniVoice
 
-OmniVoice is treated as an external local engine. The GUI calls the Python runtime inside the OmniVoice project directory.
-
-Default development location:
+开发环境默认目录：
 
 ```text
 D:\Codex\workspaces\OmniVoice
 ```
 
-Portable package location:
+portable 整合包目录：
 
 ```text
 models\OmniVoice
 ```
 
-The app expects:
+portable 运行时需要保留：
 
 ```text
 models\OmniVoice\.python\python.exe
 models\OmniVoice\.venv
 models\OmniVoice\hf_cache
+models\OmniVoice\omnivoice
 ```
 
-Supported OmniVoice modes:
+支持的能力：
 
-- 自动音色：generate with OmniVoice's automatic voice selection
-- 语音设计：describe the desired voice, for example `female, natural, clear`
-- 语音克隆：upload reference audio; reference text is optional because OmniVoice can auto-transcribe
+- **自动音色**：由 OmniVoice 自动选择音色
+- **语音设计**：使用文字描述需要的声音风格
+- **语音克隆**：上传参考音频，参考文本可以选填
+- **语速控制**：使用 OmniVoice 原生 `speed` 参数
+- **生成步数**：可调整 `num_step`
 
-OmniVoice supports native speed control. The GUI exposes `speed` and `num_step`.
+## 本地 BGM 音乐库
 
-## Build EXE
+将音乐文件放入：
+
+```text
+assets\bgm_library
+```
+
+软件支持 MP3、WAV、M4A 和 FLAC。启用“随机匹配并卡点”后，软件会随机选择一首音乐，并根据文件名中的 BPM 信息让句间切换尽量贴合鼓点。
+
+推荐文件名：
+
+```text
+healing_story_76bpm.mp3
+knowledge_clean_92bpm.mp3
+business_growth_106bpm.mp3
+viral_fast_124bpm.mp3
+suspense_reveal_132bpm.mp3
+```
+
+## 打包 EXE
 
 ```powershell
 .\build_exe.ps1
 ```
 
-The build output is written outside the repository:
+输出位置：
 
 ```text
-\ai_caption_video_exe\ai_caption_video.exe
+D:\Codex\outputs\ai_caption_video_exe\ai_caption_video.exe
 ```
 
-The EXE does not include TTS model weights.
+EXE 不包含 TTS 模型权重。制作 portable 版本时，需要保留完整的 `models` 和 `assets` 目录结构。
 
-## GitHub Release Suggestion
+## 发布建议
 
-Do not commit generated EXE files to the repository. If you want to distribute Windows builds, upload the EXE under GitHub Releases instead.
+- 不要将模型权重、portable 整合包和生成视频提交到 Git 仓库
+- 源码通过 GitHub 仓库发布
+- EXE 可以通过 GitHub Releases 发布
+- 包含模型的完整 portable 包建议通过网盘分发
 
-## License
+## 许可证
 
-MIT License. See [LICENSE](LICENSE).
+本项目采用 MIT License，详情请查看 [LICENSE](LICENSE)。
