@@ -8,7 +8,8 @@
 
 [Watch demo video](images/demo.mp4)
 
-<iframe src="//player.bilibili.com/player.html?isOutside=true&aid=116766571237536&bvid=BV1A9Ld6BEf8&cid=39198196659&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
+[![B 站视频演示](https://www.bilibili.com/video/BV1A9Ld6BEf8/?share_source=copy_web&vd_source=d5152d298246eb70945ccbc187b99a11)](https://www.bilibili.com/video/BV1A9Ld6BEf8)
+
 
 ## Features
 
