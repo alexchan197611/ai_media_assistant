@@ -20,9 +20,12 @@
 - adjustable font size with real-time wrapping preview
 - 选中文字标记重点，视频中显示黄色并带心跳动效
 - per-line base color selection with keyword highlights preserved
+- 每句可单独绑定背景图片，未配图时自动使用黑底
+- 背景图片自动裁切为 9:16，并随机应用轻微推拉和平移运镜
 - 随机字幕切换动画：缩小、滑出、竖起收起、倾斜缩小等
 - rolling queue caption template: read text turns vertical, current text is enlarged, upcoming text waits below
 - 可选背景音乐，自动裁剪到视频长度并降低音量
+- 内置音乐库支持随机选曲，并让句间切换吸附到鼓点；连续生成时尽量避免重复曲目
 - 可选 TTS：
   - Qwen3-TTS：支持预设人声、语音设计、语音克隆
   - OmniVoice：支持自动音色、语音设计、语音克隆和原生语速控制
@@ -46,6 +49,7 @@ ai_caption_video/
     config.py
     font_utils.py
     gui.py
+    music_library.py
     omnivoice_bridge.py
     renderer.py
     text_utils.py
@@ -101,6 +105,9 @@ The GUI supports:
 - selecting output directory
 - marking highlighted text
 - clearing all marks
+- assigning or clearing a background image for the current line
+- live image and caption composition preview
+- random BGM selection and beat-synced sentence transitions
 - Qwen3-TTS or OmniVoice engine selection
 - Qwen3-TTS mode selection: preset voice, voice design, or voice clone
 - OmniVoice mode selection: auto voice, voice design, or voice clone

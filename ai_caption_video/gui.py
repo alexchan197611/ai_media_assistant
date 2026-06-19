@@ -7,12 +7,14 @@ import subprocess
 import threading
 import traceback
 from datetime import datetime
+from difflib import SequenceMatcher
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from PIL import Image, ImageTk
 
+from . import __version__
 from .config import DEFAULT_BGM, DEFAULT_INPUT, DEFAULT_OUTPUT_DIR, VideoConfig
 from .font_utils import find_chinese_font
 from .omnivoice_bridge import (
@@ -35,9 +37,9 @@ SETTINGS_PATH = Path("D:/Codex/cache/ai_caption_video_settings.json")
 class CaptionVideoApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("AI Caption Video")
-        self.geometry("1040x820")
-        self.minsize(900, 700)
+        self.title(f"AI Caption Video {__version__}")
+        self.geometry("1180x940")
+        self.minsize(1020, 760)
 
         self.messages: queue.Queue[tuple[str, str]] = queue.Queue()
         self.worker: threading.Thread | None = None
@@ -45,6 +47,7 @@ class CaptionVideoApp(tk.Tk):
 
         self.output_dir_var = tk.StringVar(value=self._initial_output_dir())
         self.bgm_var = tk.StringVar(value=str(DEFAULT_BGM))
+        self.random_bgm_var = tk.BooleanVar(value=bool(self.settings.get("random_bgm", False)))
         self.font_var = tk.StringVar(value="")
         self.duration_var = tk.StringVar(value="2.0")
         self.fps_var = tk.StringVar(value="30")
@@ -78,10 +81,15 @@ class CaptionVideoApp(tk.Tk):
         self.omnivoice_speed_var = tk.StringVar(value=str(self.settings.get("omnivoice_speed", "1.0")))
         self.omnivoice_num_step_var = tk.StringVar(value=str(self.settings.get("omnivoice_num_step", "16")))
         self.status_var = tk.StringVar(value="准备就绪")
+        self.current_image_var = tk.StringVar(value="当前行：黑色背景")
         self.line_colors: dict[int, tuple[int, int, int, int]] = {}
+        self.line_images: dict[int, Path] = {}
+        self._line_snapshot: list[str] = []
         self.preview_photo = None
 
         self._build_ui()
+        self._line_snapshot = self._script_lines()
+        self.script_text.edit_modified(False)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.after(150, self._poll_messages)
 
@@ -147,7 +155,13 @@ class CaptionVideoApp(tk.Tk):
             button.grid(row=0, column=index, padx=(0, 4))
 
         self._path_row(form, 2, "输出目录", self.output_dir_var, self._choose_output_dir)
-        self._path_row(form, 3, "背景音乐", self.bgm_var, self._choose_bgm)
+        self._label(form, 3, "背景音乐")
+        bgm_row = ttk.Frame(form)
+        bgm_row.grid(row=3, column=1, columnspan=2, sticky="ew", pady=6)
+        bgm_row.columnconfigure(0, weight=1)
+        ttk.Entry(bgm_row, textvariable=self.bgm_var).grid(row=0, column=0, sticky="ew")
+        ttk.Button(bgm_row, text="选择", command=self._choose_bgm).grid(row=0, column=1, padx=(8, 10))
+        ttk.Checkbutton(bgm_row, text="随机匹配并卡点", variable=self.random_bgm_var).grid(row=0, column=2, sticky="w")
         self._path_row(form, 4, "字体文件", self.font_var, self._choose_font)
 
         tts_row = ttk.Frame(form)
@@ -292,6 +306,13 @@ class CaptionVideoApp(tk.Tk):
         self.preview_canvas = tk.Canvas(preview, width=270, height=480, bg="#111111", highlightthickness=1, highlightbackground="#444444")
         self.preview_canvas.grid(row=1, column=0, pady=(8, 0))
         ttk.Label(preview, text="预览当前光标所在行").grid(row=2, column=0, sticky="w", pady=(8, 0))
+        image_actions = ttk.Frame(preview)
+        image_actions.grid(row=3, column=0, sticky="ew", pady=(8, 0))
+        ttk.Button(image_actions, text="选择当前行图片", command=self._choose_current_line_image).grid(row=0, column=0)
+        ttk.Button(image_actions, text="清除", command=self._clear_current_line_image).grid(row=0, column=1, padx=(8, 0))
+        ttk.Label(preview, textvariable=self.current_image_var, wraplength=270).grid(
+            row=4, column=0, sticky="w", pady=(6, 0)
+        )
 
         footer = ttk.Frame(self, padding=(18, 8, 18, 16))
         footer.grid(row=2, column=0, sticky="ew")
@@ -326,7 +347,43 @@ class CaptionVideoApp(tk.Tk):
     def _on_script_modified(self, _event=None) -> None:
         if self.script_text.edit_modified():
             self.script_text.edit_modified(False)
+            self._reconcile_line_metadata()
             self._schedule_preview_update()
+
+    def _script_lines(self) -> list[str]:
+        return self.script_text.get("1.0", "end-1c").split("\n")
+
+    def _reconcile_line_metadata(self) -> None:
+        new_lines = self._script_lines()
+        old_lines = self._line_snapshot
+        if new_lines == old_lines:
+            return
+
+        new_colors: dict[int, tuple[int, int, int, int]] = {}
+        new_images: dict[int, Path] = {}
+        matcher = SequenceMatcher(a=old_lines, b=new_lines, autojunk=False)
+        for tag, old_start, old_end, new_start, new_end in matcher.get_opcodes():
+            if tag != "equal":
+                continue
+            for offset in range(old_end - old_start):
+                old_line_no = old_start + offset + 1
+                new_line_no = new_start + offset + 1
+                if old_line_no in self.line_colors:
+                    new_colors[new_line_no] = self.line_colors[old_line_no]
+                if old_line_no in self.line_images:
+                    new_images[new_line_no] = self.line_images[old_line_no]
+
+        self.line_colors = new_colors
+        self.line_images = new_images
+        self._line_snapshot = new_lines
+        self._refresh_line_color_tags()
+
+    def _refresh_line_color_tags(self) -> None:
+        for tag in self.script_text.tag_names():
+            if tag.startswith("line_color_"):
+                self.script_text.tag_delete(tag)
+        for line_no, color in self.line_colors.items():
+            self._apply_line_color_tag(line_no, self._hex_from_rgba(color))
 
     def _schedule_preview_update(self) -> None:
         if hasattr(self, "_preview_job"):
@@ -348,15 +405,28 @@ class CaptionVideoApp(tk.Tk):
             )
             font_path = find_chinese_font(self.font_var.get().strip() or None)
             renderer = CaptionRenderer(config, font_path, [])
+            line_no = self._current_line_no()
+            background = self._preview_background_for_line(line_no)
             if self._caption_template_value() == "queue":
                 segments = tuple(tuple(segment) for segment in self._script_segments())
                 if not segments:
                     segments = ((TextToken("请输入文案", False, self._rgba_from_hex("#666666")),),)
                 index = min(max(self._current_nonempty_segment_index(), 0), len(segments) - 1)
-                frame = renderer.frame_queue(segments, index, t=config.intro_duration + 0.18, duration=2.0)
+                frame = renderer.frame_queue(
+                    segments,
+                    index,
+                    t=config.intro_duration + 0.18,
+                    duration=2.0,
+                    background=background,
+                )
             else:
-                tokens = self._tokens_for_line(self._current_line_no())
-                frame = renderer.frame_tokens(tuple(tokens), t=config.intro_duration + 0.05, duration=2.0)
+                tokens = self._tokens_for_line(line_no)
+                frame = renderer.frame_tokens(
+                    tuple(tokens),
+                    t=config.intro_duration + 0.05,
+                    duration=2.0,
+                    background=background,
+                )
             image = Image.fromarray(frame).resize((270, 480), Image.Resampling.LANCZOS)
         except Exception:
             image = Image.new("RGB", (270, 480), (0, 0, 0))
@@ -364,6 +434,24 @@ class CaptionVideoApp(tk.Tk):
         self.preview_photo = ImageTk.PhotoImage(image)
         self.preview_canvas.delete("all")
         self.preview_canvas.create_image(0, 0, anchor="nw", image=self.preview_photo)
+        self._refresh_current_image_label()
+
+    def _preview_background_for_line(self, line_no: int) -> Image.Image | None:
+        path = self.line_images.get(line_no)
+        if path is None or not path.exists():
+            return None
+        try:
+            with Image.open(path) as source:
+                return source.convert("RGB").copy()
+        except OSError:
+            return None
+
+    def _refresh_current_image_label(self) -> None:
+        path = self.line_images.get(self._current_line_no())
+        if path and path.exists():
+            self.current_image_var.set(f"当前行配图：{path.name}")
+        else:
+            self.current_image_var.set("当前行：黑色背景")
 
     def _tokens_for_line(self, line_no: int) -> list[TextToken]:
         line_text = self.script_text.get(f"{line_no}.0", f"{line_no}.end")
@@ -431,6 +519,9 @@ class CaptionVideoApp(tk.Tk):
             return (255, 255, 255, 255)
         return (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16), 255)
 
+    def _hex_from_rgba(self, color: tuple[int, int, int, int]) -> str:
+        return f"#{color[0]:02x}{color[1]:02x}{color[2]:02x}"
+
     def _path_row(self, parent: ttk.Frame, row: int, label: str, variable: tk.StringVar, command) -> None:
         self._label(parent, row, label)
         ttk.Entry(parent, textvariable=variable).grid(row=row, column=1, sticky="ew", pady=6)
@@ -496,6 +587,21 @@ class CaptionVideoApp(tk.Tk):
         path = filedialog.askopenfilename(filetypes=[("Audio files", "*.mp3;*.wav;*.m4a"), ("All files", "*.*")])
         if path:
             self.bgm_var.set(path)
+
+    def _choose_current_line_image(self) -> None:
+        path = filedialog.askopenfilename(
+            filetypes=[
+                ("Image files", "*.jpg;*.jpeg;*.png;*.webp;*.bmp"),
+                ("All files", "*.*"),
+            ]
+        )
+        if path:
+            self.line_images[self._current_line_no()] = Path(path)
+            self._schedule_preview_update()
+
+    def _clear_current_line_image(self) -> None:
+        self.line_images.pop(self._current_line_no(), None)
+        self._schedule_preview_update()
 
     def _choose_font(self) -> None:
         path = filedialog.askopenfilename(filetypes=[("Font files", "*.ttf;*.ttc;*.otf"), ("All files", "*.*")])
@@ -596,6 +702,7 @@ class CaptionVideoApp(tk.Tk):
         bgm_text = self.bgm_var.get().strip()
         font_text = self.font_var.get().strip()
         segments = self._script_segments()
+        background_paths = self._segment_background_paths()
         texts = self._segment_texts(segments)
         tts_enabled = bool(self.tts_enabled_var.get())
         tts_engine = self.tts_engine_var.get()
@@ -667,7 +774,20 @@ class CaptionVideoApp(tk.Tk):
 
         self.worker = threading.Thread(
             target=self._run_build,
-            args=(segments, texts, output_path, bgm_text, font_text, config, tts_enabled, tts_engine, tts_options, omnivoice_options),
+            args=(
+                segments,
+                texts,
+                background_paths,
+                output_path,
+                bgm_text,
+                font_text,
+                config,
+                tts_enabled,
+                tts_engine,
+                tts_options,
+                omnivoice_options,
+                bool(self.random_bgm_var.get()),
+            ),
             daemon=True,
         )
         self.worker.start()
@@ -696,6 +816,14 @@ class CaptionVideoApp(tk.Tk):
 
     def _segment_texts(self, segments: list[list[TextToken]]) -> list[str]:
         return ["".join(token.text for token in segment).strip() for segment in segments]
+
+    def _segment_background_paths(self) -> list[Path | None]:
+        paths: list[Path | None] = []
+        end_line = int(self.script_text.index("end-1c").split(".")[0])
+        for line_no in range(1, end_line + 1):
+            if self.script_text.get(f"{line_no}.0", f"{line_no}.end").strip():
+                paths.append(self.line_images.get(line_no))
+        return paths
 
     def _initial_output_dir(self) -> str:
         saved = self.settings.get("output_dir") or self.settings.get("output_path")
@@ -762,6 +890,7 @@ class CaptionVideoApp(tk.Tk):
                 "font_size": int(self.font_size_var.get()),
                 "caption_template": self.caption_template_var.get(),
                 "output_dir": self.output_dir_var.get(),
+                "random_bgm": bool(self.random_bgm_var.get()),
                 "tts_enabled": bool(self.tts_enabled_var.get()),
                 "tts_engine": self.tts_engine_var.get(),
                 "qwen_mode": self.qwen_mode_var.get(),
@@ -797,6 +926,7 @@ class CaptionVideoApp(tk.Tk):
         self,
         segments: list[list[TextToken]],
         texts: list[str],
+        background_paths: list[Path | None],
         output_path: Path,
         bgm_text: str,
         font_text: str,
@@ -805,6 +935,7 @@ class CaptionVideoApp(tk.Tk):
         tts_engine: str,
         tts_options: TTSOptions,
         omnivoice_options: OmniVoiceOptions,
+        random_bgm: bool,
     ) -> None:
         try:
             self.messages.put(("log", f"已准备 {len(segments)} 个字幕片段"))
@@ -826,6 +957,9 @@ class CaptionVideoApp(tk.Tk):
                 bgm_path=bgm_text or None,
                 font_path=font_text or None,
                 narration_paths=narration_paths,
+                background_paths=background_paths,
+                random_bgm=random_bgm,
+                log_callback=lambda message: self.messages.put(("log", message)),
             )
             self.messages.put(("done", str(result)))
         except Exception:

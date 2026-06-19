@@ -48,6 +48,8 @@ class CaptionRenderer:
         t: float,
         duration: float,
         transition: str = "shrink",
+        background: Image.Image | None = None,
+        background_motion: str = "zoom_in",
     ) -> np.ndarray:
         transform = self._caption_transform(t, duration, transition)
         caption = self._render_caption_tokens(tokens, self._highlight_pulse(t, duration))
@@ -64,7 +66,7 @@ class CaptionRenderer:
             alpha = alpha.point(lambda value: int(value * max(0.0, min(1.0, transform.opacity))))
             caption.putalpha(alpha)
 
-        frame = Image.new("RGB", (self.config.width, self.config.height), self.config.background_color)
+        frame = self._background_frame(background, t, duration, background_motion)
         x = (self.config.width - caption.width) // 2 + transform.offset_x
         y = (self.config.height - caption.height) // 2 + transform.offset_y
         frame.paste(caption, (x, y), caption)
@@ -76,8 +78,10 @@ class CaptionRenderer:
         index: int,
         t: float,
         duration: float,
+        background: Image.Image | None = None,
+        background_motion: str = "zoom_in",
     ) -> np.ndarray:
-        frame = Image.new("RGB", (self.config.width, self.config.height), self.config.background_color)
+        frame = self._background_frame(background, t, duration, background_motion)
         layer = Image.new("RGBA", frame.size, (0, 0, 0, 0))
 
         intro = min(1.0, t / max(0.001, self.config.intro_duration))
@@ -122,6 +126,63 @@ class CaptionRenderer:
 
         frame = Image.alpha_composite(frame.convert("RGBA"), layer).convert("RGB")
         return np.array(frame)
+
+    def _background_frame(
+        self,
+        background: Image.Image | None,
+        t: float,
+        duration: float,
+        motion: str,
+    ) -> Image.Image:
+        if background is None:
+            return Image.new("RGB", (self.config.width, self.config.height), self.config.background_color)
+
+        source = background.convert("RGB")
+        target_ratio = self.config.width / self.config.height
+        source_ratio = source.width / max(1, source.height)
+        if source_ratio > target_ratio:
+            base_height = source.height
+            base_width = int(base_height * target_ratio)
+        else:
+            base_width = source.width
+            base_height = int(base_width / target_ratio)
+
+        progress = min(max(t / max(0.001, duration), 0.0), 1.0)
+        amount = max(0.0, min(0.20, self.config.background_motion_amount))
+        if motion == "zoom_out":
+            zoom = 1.0 + amount * (1.0 - progress)
+        else:
+            zoom = 1.0 + amount * progress
+        if motion in {"pan_left", "pan_right", "pan_up", "pan_down"}:
+            zoom = 1.0 + max(amount, 0.06)
+
+        crop_width = max(1, int(base_width / zoom))
+        crop_height = max(1, int(base_height / zoom))
+        center_x = source.width / 2.0
+        center_y = source.height / 2.0
+        travel_x = max(0.0, (base_width - crop_width) / 2.0)
+        travel_y = max(0.0, (base_height - crop_height) / 2.0)
+        if motion == "pan_left":
+            center_x += travel_x * (1.0 - 2.0 * progress)
+        elif motion == "pan_right":
+            center_x += travel_x * (-1.0 + 2.0 * progress)
+        elif motion == "pan_up":
+            center_y += travel_y * (1.0 - 2.0 * progress)
+        elif motion == "pan_down":
+            center_y += travel_y * (-1.0 + 2.0 * progress)
+
+        left = int(round(center_x - crop_width / 2.0))
+        top = int(round(center_y - crop_height / 2.0))
+        left = min(max(left, 0), max(0, source.width - crop_width))
+        top = min(max(top, 0), max(0, source.height - crop_height))
+        image = source.crop((left, top, left + crop_width, top + crop_height))
+        image = image.resize((self.config.width, self.config.height), Image.Resampling.LANCZOS)
+
+        dim = max(0.0, min(0.85, self.config.background_image_dim))
+        if dim:
+            overlay = Image.new("RGBA", image.size, (0, 0, 0, int(255 * dim)))
+            image = Image.alpha_composite(image.convert("RGBA"), overlay).convert("RGB")
+        return image
 
     def _caption_transform(self, t: float, duration: float, transition: str) -> CaptionTransform:
         intro_duration = max(0.001, self.config.intro_duration)
