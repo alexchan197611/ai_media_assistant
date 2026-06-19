@@ -8,6 +8,8 @@
 
 [Watch demo video](images/demo.mp4)
 
+<iframe src="//player.bilibili.com/player.html?isOutside=true&aid=116766571237536&bvid=BV1A9Ld6BEf8&cid=39198196659&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
+
 ## Features
 
 - 多行文案输入：每一行生成一个字幕片段
