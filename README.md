@@ -10,12 +10,11 @@
 
 ![软件主界面](images/gui-main.png)
 
+<p align="center">
 <a href="images/demo.mp4">
   <img src="images/demo.png" width="360" alt="点击观看演示视频">
 </a>
-
-[![点击封面观看演示视频](images/demo.png)](images/demo.mp4)
-
+</p>
 
 - [直接打开演示视频 demo.mp4](images/demo.mp4)
 - [观看 B 站视频演示](https://www.bilibili.com/video/BV1A9Ld6BEf8)
