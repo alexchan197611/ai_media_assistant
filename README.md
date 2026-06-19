@@ -6,7 +6,7 @@
 
 ![AI Caption Video GUI](images/gui-main.png)
 
-[Watch demo video](images/demo.mp4)
+![AI Caption Video GUI](images/demo.png)[Watch demo video](images/demo.mp4)
 
 [![B 站视频演示](https://www.bilibili.com/video/BV1A9Ld6BEf8/?share_source=copy_web&vd_source=d5152d298246eb70945ccbc187b99a11)](https://www.bilibili.com/video/BV1A9Ld6BEf8)
 
