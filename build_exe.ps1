@@ -5,6 +5,8 @@ $OutputRoot = "D:\Codex\outputs"
 $DistPath = Join-Path $OutputRoot "ai_caption_video_exe"
 $WorkPath = "D:\Codex\cache\tmp\ai_caption_video_pyinstaller"
 $SpecPath = "D:\Codex\cache\tmp\ai_caption_video_spec"
+$AncientFontPath = Join-Path $ProjectRoot "assets\fonts"
+$AncientAssetsPath = Join-Path $ProjectRoot "assets\ancient"
 
 New-Item -ItemType Directory -Force -Path $OutputRoot, $WorkPath, $SpecPath | Out-Null
 Remove-Item -Recurse -Force -Path $DistPath -ErrorAction SilentlyContinue
@@ -24,10 +26,21 @@ try {
         --hidden-import imageio_ffmpeg `
         --copy-metadata imageio `
         --copy-metadata moviepy `
+        --add-data "$AncientFontPath;assets\fonts" `
+        --add-data "$AncientAssetsPath;assets\ancient" `
         gui_entry.py
 
+    if ($LASTEXITCODE -ne 0) {
+        throw "PyInstaller failed with exit code $LASTEXITCODE."
+    }
+
     Copy-Item -Force -Path (Join-Path $ProjectRoot "input.txt") -Destination (Join-Path $DistPath "input.txt")
-    Copy-Item -Recurse -Force -Path (Join-Path $ProjectRoot "assets") -Destination $DistPath
+    $DistAssets = Join-Path $DistPath "assets"
+    New-Item -ItemType Directory -Force -Path $DistAssets | Out-Null
+    $BgmLibrary = Join-Path $ProjectRoot "assets\bgm_library"
+    if (Test-Path $BgmLibrary) {
+        Copy-Item -Recurse -Force -Path $BgmLibrary -Destination $DistAssets
+    }
 }
 finally {
     Pop-Location

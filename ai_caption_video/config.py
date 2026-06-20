@@ -6,6 +6,7 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FROZEN = getattr(sys, "frozen", False)
 EXE_DIR = Path(sys.executable).resolve().parent if FROZEN else PROJECT_ROOT
+BUNDLE_ROOT = Path(getattr(sys, "_MEIPASS", EXE_DIR)) if FROZEN else PROJECT_ROOT
 DEFAULT_OUTPUT_ROOT = Path("D:/Codex/outputs/ai_caption_video") if FROZEN else PROJECT_ROOT / "output"
 
 
@@ -38,3 +39,8 @@ DEFAULT_INPUT = PROJECT_ROOT / "input.txt" if not FROZEN else EXE_DIR / "input.t
 DEFAULT_BGM = PROJECT_ROOT / "assets" / "bgm.mp3" if not FROZEN else EXE_DIR / "assets" / "bgm.mp3"
 DEFAULT_OUTPUT = DEFAULT_OUTPUT_ROOT / "video.mp4"
 DEFAULT_OUTPUT_DIR = DEFAULT_OUTPUT_ROOT
+ANCIENT_FONT = BUNDLE_ROOT / "assets" / "fonts" / "HYShangWeiShouShu.ttf"
+ANCIENT_FALLBACK_FONT = BUNDLE_ROOT / "assets" / "fonts" / "ZhiMangXing-Regular.ttf"
+ANCIENT_BACKGROUND = BUNDLE_ROOT / "assets" / "ancient" / "ancient_background.png"
+ANCIENT_VOICE = BUNDLE_ROOT / "assets" / "ancient" / "ancient_voice.wav"
+ANCIENT_REFERENCE_TEXT = "你相信吗,一个不会乐器,不会唱歌,甚至五音不全的人今天也能在一分钟内,制作出自己的原创歌曲"

@@ -15,7 +15,14 @@ from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 
 from . import __version__
-from .config import DEFAULT_BGM, DEFAULT_INPUT, DEFAULT_OUTPUT_DIR, VideoConfig
+from .config import (
+    ANCIENT_REFERENCE_TEXT,
+    ANCIENT_VOICE,
+    DEFAULT_BGM,
+    DEFAULT_INPUT,
+    DEFAULT_OUTPUT_DIR,
+    VideoConfig,
+)
 from .font_utils import find_chinese_font
 from .omnivoice_bridge import (
     DEFAULT_OMNIVOICE_DIR,
@@ -57,7 +64,7 @@ class CaptionVideoApp(tk.Tk):
         self.caption_template_var = tk.StringVar(value=str(self.settings.get("caption_template", "滚动队列")))
         self.heartbeat_var = tk.StringVar(value=str(self.settings.get("heartbeat_interval_ms", 700)))
         self.tts_enabled_var = tk.BooleanVar(value=bool(self.settings.get("tts_enabled", True)))
-        self.tts_engine_var = tk.StringVar(value="Qwen3-TTS")
+        self.tts_engine_var = tk.StringVar(value="OmniVoice")
         self.qwen_mode_var = tk.StringVar(value=str(self.settings.get("qwen_mode", "预设人声")))
         self.tts_model_dir_var = tk.StringVar(value=str(resolve_qwen_model_dir(self.settings.get("tts_model_dir", DEFAULT_TTS_MODEL_DIR))))
         self.tts_speaker_var = tk.StringVar(value=str(self.settings.get("tts_speaker", "Vivian")))
@@ -76,8 +83,11 @@ class CaptionVideoApp(tk.Tk):
                 )
             )
         )
-        self.omnivoice_mode_var = tk.StringVar(value=str(self.settings.get("omnivoice_mode", "自动音色")))
-        self.omnivoice_ref_audio_var = tk.StringVar(value=str(self.settings.get("omnivoice_ref_audio", "")))
+        self.omnivoice_mode_var = tk.StringVar(value="语音克隆")
+        default_ref_audio = str(ANCIENT_VOICE) if ANCIENT_VOICE.exists() else str(
+            self.settings.get("omnivoice_ref_audio", "")
+        )
+        self.omnivoice_ref_audio_var = tk.StringVar(value=default_ref_audio)
         self.omnivoice_speed_var = tk.StringVar(value=str(self.settings.get("omnivoice_speed", "1.0")))
         self.omnivoice_num_step_var = tk.StringVar(value=str(self.settings.get("omnivoice_num_step", "16")))
         self.status_var = tk.StringVar(value="准备就绪")
@@ -92,6 +102,7 @@ class CaptionVideoApp(tk.Tk):
         self.script_text.edit_modified(False)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.after(150, self._poll_messages)
+        self.after(0, self._maximize_window)
 
     def _build_ui(self) -> None:
         self.columnconfigure(0, weight=1)
@@ -129,22 +140,24 @@ class CaptionVideoApp(tk.Tk):
         mark_bar = ttk.Frame(form)
         mark_bar.grid(row=1, column=1, columnspan=2, sticky="ew", pady=(0, 8))
         ttk.Label(mark_bar, text="字幕模板").grid(row=0, column=0, sticky="w", padx=(0, 6))
-        ttk.Combobox(
+        self.caption_template_combo = ttk.Combobox(
             mark_bar,
             textvariable=self.caption_template_var,
-            values=["滚动队列", "居中大字"],
+            values=["滚动队列", "居中大字", "古风模板"],
             state="readonly",
             width=14,
-        ).grid(row=0, column=1, sticky="w", padx=(0, 14))
+        )
+        self.caption_template_combo.grid(row=0, column=1, sticky="w", padx=(0, 14))
+        self.caption_template_combo.bind("<<ComboboxSelected>>", self._on_caption_template_changed)
         ttk.Button(mark_bar, text="标记重点", command=self._mark_selection).grid(row=0, column=2, padx=(0, 8))
         ttk.Button(mark_bar, text="取消选中标记", command=self._unmark_selection).grid(row=0, column=3, padx=(0, 8))
         ttk.Button(mark_bar, text="清空全部标记", command=self._clear_marks).grid(row=0, column=4)
-        color_bar = ttk.Frame(mark_bar)
-        color_bar.grid(row=0, column=5, sticky="w", padx=(18, 0))
-        ttk.Label(color_bar, text="行颜色").grid(row=0, column=0, padx=(0, 6))
+        self.color_bar = ttk.Frame(mark_bar)
+        self.color_bar.grid(row=0, column=5, sticky="w", padx=(18, 0))
+        ttk.Label(self.color_bar, text="行颜色").grid(row=0, column=0, padx=(0, 6))
         for index, (name, color) in enumerate(self._line_color_choices(), start=1):
             button = tk.Button(
-                color_bar,
+                self.color_bar,
                 text="",
                 width=2,
                 height=1,
@@ -270,7 +283,7 @@ class CaptionVideoApp(tk.Tk):
         ttk.Label(self.omnivoice_panel, text="参考文本").grid(row=3, column=0, sticky="nw", pady=(8, 0))
         self.omnivoice_ref_text = tk.Text(self.omnivoice_panel, height=2, wrap="word", undo=True)
         self.omnivoice_ref_text.grid(row=3, column=1, columnspan=5, sticky="ew", pady=(8, 0))
-        self.omnivoice_ref_text.insert("1.0", str(self.settings.get("omnivoice_ref_text", "")))
+        self.omnivoice_ref_text.insert("1.0", ANCIENT_REFERENCE_TEXT)
 
         ttk.Label(self.omnivoice_panel, text="语音设计").grid(row=4, column=0, sticky="nw", pady=(8, 0))
         self.omnivoice_instruct_text = tk.Text(self.omnivoice_panel, height=2, wrap="word", undo=True)
@@ -324,6 +337,7 @@ class CaptionVideoApp(tk.Tk):
         self.start_button.grid(row=0, column=2, padx=(8, 0))
         self._refresh_tts_engine_fields()
         self._refresh_qwen_mode_fields()
+        self._refresh_caption_template_fields(activate_voice=False)
         self._bind_preview_updates()
         self.after(250, self._update_preview)
 
@@ -407,7 +421,8 @@ class CaptionVideoApp(tk.Tk):
             renderer = CaptionRenderer(config, font_path, [])
             line_no = self._current_line_no()
             background = self._preview_background_for_line(line_no)
-            if self._caption_template_value() == "queue":
+            template = self._caption_template_value()
+            if template == "queue":
                 segments = tuple(tuple(segment) for segment in self._script_segments())
                 if not segments:
                     segments = ((TextToken("请输入文案", False, self._rgba_from_hex("#666666")),),)
@@ -416,6 +431,14 @@ class CaptionVideoApp(tk.Tk):
                     segments,
                     index,
                     t=config.intro_duration + 0.18,
+                    duration=2.0,
+                    background=background,
+                )
+            elif template == "ancient":
+                tokens = self._tokens_for_line(line_no)
+                frame = renderer.frame_ancient(
+                    tuple(tokens),
+                    t=1.45,
                     duration=2.0,
                     background=background,
                 )
@@ -535,6 +558,37 @@ class CaptionVideoApp(tk.Tk):
             self.omnivoice_panel.grid_remove()
             self.qwen_panel.grid()
             self._refresh_qwen_mode_fields()
+
+    def _on_caption_template_changed(self, _event=None) -> None:
+        self._refresh_caption_template_fields(activate_voice=True)
+        self._schedule_preview_update()
+
+    def _refresh_caption_template_fields(self, activate_voice: bool) -> None:
+        if self._caption_template_value() == "ancient":
+            self.color_bar.grid_remove()
+            if activate_voice:
+                self._activate_ancient_voice()
+        else:
+            self.color_bar.grid()
+
+    def _activate_ancient_voice(self) -> None:
+        self.tts_enabled_var.set(True)
+        self.tts_engine_var.set("OmniVoice")
+        self.omnivoice_mode_var.set("语音克隆")
+        if ANCIENT_VOICE.exists():
+            self.omnivoice_ref_audio_var.set(str(ANCIENT_VOICE))
+        self.omnivoice_ref_text.delete("1.0", "end")
+        self.omnivoice_ref_text.insert("1.0", ANCIENT_REFERENCE_TEXT)
+        self._refresh_tts_engine_fields()
+
+    def _maximize_window(self) -> None:
+        try:
+            self.state("zoomed")
+        except tk.TclError:
+            try:
+                self.attributes("-zoomed", True)
+            except tk.TclError:
+                pass
 
     def _refresh_qwen_mode_fields(self) -> None:
         mode = self.qwen_mode_var.get()
@@ -863,7 +917,11 @@ class CaptionVideoApp(tk.Tk):
         }.get(self.qwen_mode_var.get(), "preset")
 
     def _caption_template_value(self) -> str:
-        return {"滚动队列": "queue", "居中大字": "center"}.get(self.caption_template_var.get(), "queue")
+        return {
+            "滚动队列": "queue",
+            "居中大字": "center",
+            "古风模板": "ancient",
+        }.get(self.caption_template_var.get(), "queue")
 
     def _omnivoice_mode_value(self) -> str:
         return {"自动音色": "auto", "语音设计": "design", "语音克隆": "clone"}.get(

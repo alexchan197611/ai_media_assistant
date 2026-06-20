@@ -113,6 +113,25 @@ def build_video_from_token_segments(
             )
             for index in range(len(segments))
         ]
+    elif config.caption_template == "ancient":
+        segment_starts: list[float] = []
+        timeline_cursor = 0.0
+        for segment_duration in segment_durations:
+            segment_starts.append(timeline_cursor)
+            timeline_cursor += segment_duration
+        clips = [
+            _make_ancient_clip(
+                renderer,
+                segment,
+                config,
+                duration=segment_durations[index],
+                narration=narration_clips[index] if index < len(narration_clips) else None,
+                background=backgrounds[index],
+                background_motion=background_motions[index],
+                timeline_start=segment_starts[index],
+            )
+            for index, segment in enumerate(segments)
+        ]
     else:
         clips = [
             _make_token_clip(
@@ -216,6 +235,38 @@ def _make_queue_clip(
             clip_duration,
             background=background,
             background_motion=background_motion,
+        )
+
+    try:
+        clip = VideoClip(frame_function=make_frame, duration=clip_duration)
+    except TypeError:
+        clip = VideoClip(make_frame=make_frame, duration=clip_duration)
+    if narration is not None:
+        clip = _with_audio(clip, narration)
+    return clip
+
+
+def _make_ancient_clip(
+    renderer: CaptionRenderer,
+    tokens: list[TextToken],
+    config: VideoConfig,
+    duration: float | None = None,
+    narration=None,
+    background: Image.Image | None = None,
+    background_motion: str = "zoom_in",
+    timeline_start: float = 0.0,
+):
+    token_tuple = tuple(tokens)
+    clip_duration = duration or config.segment_duration
+
+    def make_frame(t: float):
+        return renderer.frame_ancient(
+            token_tuple,
+            t,
+            clip_duration,
+            background=background,
+            background_motion=background_motion,
+            timeline_start=timeline_start,
         )
 
     try:

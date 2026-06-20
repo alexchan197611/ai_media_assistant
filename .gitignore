@@ -17,6 +17,10 @@ output/*
 !output/.gitkeep
 assets/*
 !assets/.gitkeep
+!assets/fonts/
+assets/fonts/*
+!assets/fonts/ZhiMangXing-Regular.ttf
+!assets/fonts/OFL.txt
 *.mp4
 *.mov
 *.avi

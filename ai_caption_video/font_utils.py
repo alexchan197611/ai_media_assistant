@@ -2,6 +2,8 @@ from pathlib import Path
 
 from PIL import ImageFont
 
+from .config import ANCIENT_FALLBACK_FONT, ANCIENT_FONT
+
 
 WINDOWS_FONT_DIR = Path("C:/Windows/Fonts")
 FONT_CANDIDATES = [
@@ -34,3 +36,10 @@ def find_chinese_font(custom_font: str | None = None) -> str:
 def load_font(font_path: str, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(font_path, size=size)
 
+
+def find_ancient_font() -> str:
+    if ANCIENT_FONT.exists():
+        return str(ANCIENT_FONT)
+    if ANCIENT_FALLBACK_FONT.exists():
+        return str(ANCIENT_FALLBACK_FONT)
+    return find_chinese_font()

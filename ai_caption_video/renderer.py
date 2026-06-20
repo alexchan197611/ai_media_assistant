@@ -4,10 +4,10 @@ import math
 import re
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
-from .config import VideoConfig
-from .font_utils import load_font
+from .config import ANCIENT_BACKGROUND, VideoConfig
+from .font_utils import find_ancient_font, load_font
 
 
 @dataclass(frozen=True)
@@ -36,6 +36,7 @@ class CaptionRenderer:
     def __init__(self, config: VideoConfig, font_path: str, keywords: list[str]):
         self.config = config
         self.font_path = font_path
+        self.ancient_font_path = find_ancient_font()
         self.keywords = sorted(set(keywords), key=len, reverse=True)
         self.base_font = load_font(font_path, config.font_size)
 
@@ -126,6 +127,274 @@ class CaptionRenderer:
 
         frame = Image.alpha_composite(frame.convert("RGBA"), layer).convert("RGB")
         return np.array(frame)
+
+    def frame_ancient(
+        self,
+        tokens: tuple[TextToken, ...],
+        t: float,
+        duration: float,
+        background: Image.Image | None = None,
+        background_motion: str = "zoom_in",
+        timeline_start: float = 0.0,
+    ) -> np.ndarray:
+        if background is None:
+            frame = self._default_ancient_background().copy()
+        else:
+            frame = self._background_frame(background, t, duration, background_motion)
+            frame = self._stylize_ancient_background(frame)
+        frame = self._composite_ancient_smoke(frame, timeline_start + t)
+
+        entries = self._ancient_timeline(tokens, duration)
+        if not entries:
+            return np.array(frame)
+
+        layer = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+        max_rows = 7
+        placements: list[tuple[tuple[str, bool, float, float, bool], int, int]] = []
+        column = 0
+        row = 0
+        for entry in entries:
+            force_new_column = entry[4]
+            if placements and (force_new_column or row >= max_rows):
+                column += 1
+                row = 0
+            placements.append((entry, column, row))
+            row += 1
+        column_count = max(1, column + 1)
+        visible_rows = max((row_index for _, _, row_index in placements), default=0) + 1
+        usable_height = self.config.height * 0.72
+        usable_width = self.config.width * 0.78
+        size_by_height = int(usable_height / max(1.0, visible_rows * 1.12))
+        size_by_width = int(usable_width / max(1.0, column_count * 1.22))
+        dynamic_cap = max(72, int(self.config.font_size * 3.2))
+        font_size = max(42, min(size_by_height, size_by_width, dynamic_cap))
+        row_pitch = int(font_size * 1.12)
+        column_pitch = int(font_size * 1.22)
+        top = int((self.config.height - visible_rows * row_pitch) / 2 + row_pitch * 0.05)
+        rightmost_x = int(
+            self.config.width / 2 + (column_count - 1) * column_pitch / 2
+        )
+
+        for entry, column, row in placements:
+            char, highlighted, appear_time, transition_duration, _ = entry
+            if t < appear_time:
+                continue
+            progress = ease_out_cubic((t - appear_time) / max(0.001, transition_duration))
+            glyph = self._render_ancient_glyph(char, highlighted, font_size)
+            x = rightmost_x - column * column_pitch - glyph.width // 2
+            y = top + row * row_pitch + (row_pitch - glyph.height) // 2
+
+            if progress < 1.0:
+                haze = glyph.filter(ImageFilter.GaussianBlur(radius=max(0.2, 7.0 * (1.0 - progress))))
+                haze_alpha = haze.getchannel("A").point(lambda value: int(value * progress * 0.55))
+                haze.putalpha(haze_alpha)
+                layer.paste(haze, (x, y), haze)
+                glyph = glyph.copy()
+                glyph_alpha = glyph.getchannel("A").point(lambda value: int(value * progress))
+                glyph.putalpha(glyph_alpha)
+            layer.paste(glyph, (x, y), glyph)
+
+        frame = Image.alpha_composite(frame.convert("RGBA"), layer).convert("RGB")
+        return np.array(frame)
+
+    def _ancient_timeline(
+        self,
+        tokens: tuple[TextToken, ...],
+        duration: float,
+    ) -> list[tuple[str, bool, float, float, bool]]:
+        punctuation_weights = {
+            "，": 0.55,
+            ",": 0.55,
+            "、": 0.35,
+            "；": 0.7,
+            ";": 0.7,
+            "。": 0.95,
+            ".": 0.95,
+            "！": 0.9,
+            "!": 0.9,
+            "？": 0.9,
+            "?": 0.9,
+            "：": 0.5,
+            ":": 0.5,
+        }
+        column_break_punctuation = {"，", ",", "；", ";", "。", ".", "！", "!", "？", "?", "：", ":"}
+        raw_entries: list[tuple[str, bool, float, bool]] = []
+        cursor = 0.0
+        force_new_column = False
+        for token in tokens:
+            for char in token.text:
+                if char.isspace():
+                    continue
+                if char in punctuation_weights:
+                    cursor += punctuation_weights[char]
+                    if char in column_break_punctuation:
+                        force_new_column = True
+                    continue
+                raw_entries.append((char, token.highlighted, cursor, force_new_column))
+                force_new_column = False
+                cursor += 1.0
+
+        if not raw_entries:
+            return []
+        total_weight = max(cursor, 1.0)
+        reveal_start = min(0.16, max(0.04, duration * 0.05))
+        hold_duration = min(0.8, max(0.32, duration * 0.16))
+        reveal_duration = max(0.12, duration - reveal_start - hold_duration)
+        transition_duration = max(
+            0.07,
+            min(0.18, reveal_duration / max(1, len(raw_entries)) * 0.70),
+        )
+        return [
+            (
+                char,
+                highlighted,
+                reveal_start + (weight / total_weight) * reveal_duration,
+                transition_duration,
+                break_before,
+            )
+            for char, highlighted, weight, break_before in raw_entries
+        ]
+
+    @lru_cache(maxsize=512)
+    def _render_ancient_glyph(self, char: str, highlighted: bool, font_size: int) -> Image.Image:
+        font = load_font(self.ancient_font_path, font_size)
+        probe = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(probe)
+        is_hanyi_shangwei = "hyshangweishoushu" in self.ancient_font_path.lower()
+        if is_hanyi_shangwei:
+            ink_stroke = max(1, font_size // 90)
+            outer_stroke = ink_stroke + 1
+        else:
+            ink_stroke = max(3, font_size // 22)
+            outer_stroke = ink_stroke + max(1, font_size // 70)
+        bbox = draw.textbbox((0, 0), char, font=font, stroke_width=outer_stroke)
+        padding = max(10, font_size // 7)
+        width = max(1, bbox[2] - bbox[0] + padding * 2)
+        height = max(1, bbox[3] - bbox[1] + padding * 2)
+        image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        color = (142, 31, 24, 255) if highlighted else (8, 8, 7, 255)
+        outline = (226, 226, 216, 130)
+        draw.text(
+            (padding - bbox[0], padding - bbox[1]),
+            char,
+            font=font,
+            fill=color,
+            stroke_width=outer_stroke,
+            stroke_fill=outline,
+        )
+        draw.text(
+            (padding - bbox[0], padding - bbox[1]),
+            char,
+            font=font,
+            fill=color,
+            stroke_width=ink_stroke,
+            stroke_fill=color,
+        )
+        return image
+
+    @lru_cache(maxsize=8)
+    def _default_ancient_background(self) -> Image.Image:
+        width = self.config.width
+        height = self.config.height
+        if ANCIENT_BACKGROUND.exists():
+            with Image.open(ANCIENT_BACKGROUND) as source:
+                return ImageOps.fit(
+                    source.convert("RGB"),
+                    (width, height),
+                    method=Image.Resampling.LANCZOS,
+                    centering=(0.5, 0.5),
+                )
+
+        yy, xx = np.mgrid[0:height, 0:width]
+        nx = (xx - width * 0.50) / max(1.0, width * 0.58)
+        ny = (yy - height * 0.47) / max(1.0, height * 0.55)
+        radius = np.sqrt(nx * nx + ny * ny)
+        glow = np.clip(1.0 - radius, 0.0, 1.0) ** 1.7
+        rng = np.random.default_rng(20260621)
+        small_noise = rng.normal(0.0, 1.0, (max(2, height // 24), max(2, width // 24)))
+        noise_image = Image.fromarray(np.uint8(np.clip((small_noise + 3.0) * 36.0, 0, 255)))
+        noise = np.asarray(
+            noise_image.resize((width, height), Image.Resampling.BICUBIC).filter(ImageFilter.GaussianBlur(18)),
+            dtype=np.float32,
+        )
+        noise = (noise - noise.mean()) * 0.24
+        value = np.clip(22.0 + glow * 166.0 + noise, 10.0, 205.0)
+        rgb = np.stack((value * 0.91, value * 0.96, value), axis=-1).astype(np.uint8)
+        image = Image.fromarray(rgb, mode="RGB")
+
+        fog = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        fog_draw = ImageDraw.Draw(fog)
+        fog_draw.ellipse(
+            (-width * 0.20, height * 0.30, width * 1.10, height * 0.78),
+            fill=(225, 230, 228, 34),
+        )
+        fog_draw.ellipse(
+            (width * 0.05, height * 0.55, width * 1.30, height * 0.95),
+            fill=(205, 215, 216, 22),
+        )
+        fog = fog.filter(ImageFilter.GaussianBlur(max(24, width // 10)))
+        return Image.alpha_composite(image.convert("RGBA"), fog).convert("RGB")
+
+    @lru_cache(maxsize=8)
+    def _ancient_smoke_layers(self) -> tuple[Image.Image, ...]:
+        width = int(self.config.width * 1.48)
+        height = int(self.config.height * 1.32)
+        layers: list[Image.Image] = []
+        for seed, tint, strength in (
+            (721, (228, 234, 231), 88.0),
+            (1931, (177, 193, 192), 68.0),
+            (4093, (238, 239, 232), 52.0),
+        ):
+            rng = np.random.default_rng(seed)
+            noise_height = max(12, height // 38)
+            noise_width = max(12, width // 38)
+            noise = rng.random((noise_height, noise_width), dtype=np.float32)
+            noise_image = Image.fromarray(np.uint8(noise * 255.0), mode="L")
+            noise_image = noise_image.resize((width, height), Image.Resampling.BICUBIC)
+            noise_image = noise_image.filter(ImageFilter.GaussianBlur(max(18, self.config.width // 22)))
+            values = np.asarray(noise_image, dtype=np.float32)
+            values = (values - values.min()) / max(1.0, values.max() - values.min())
+            alpha = np.uint8(np.clip((values - 0.36) * strength, 0.0, strength))
+            layer = Image.new("RGBA", (width, height), (*tint, 0))
+            layer.putalpha(Image.fromarray(alpha, mode="L"))
+            layers.append(layer)
+        return tuple(layers)
+
+    def _composite_ancient_smoke(self, frame: Image.Image, t: float) -> Image.Image:
+        result = frame.convert("RGBA")
+        width, height = frame.size
+        for index, layer in enumerate(self._ancient_smoke_layers()):
+            travel_x = max(0, layer.width - width)
+            travel_y = max(0, layer.height - height)
+            if index == 0:
+                x = int((0.5 + 0.34 * math.sin(t * 0.31) + 0.16 * math.sin(t * 0.097 + 1.2)) * travel_x)
+                y = int((0.5 + 0.31 * math.cos(t * 0.21 + 0.8) + 0.19 * math.sin(t * 0.073)) * travel_y)
+            elif index == 1:
+                x = int((0.5 + 0.32 * math.cos(t * 0.25 + 1.6) + 0.18 * math.sin(t * 0.081)) * travel_x)
+                y = int((0.5 + 0.35 * math.sin(t * 0.28 + 2.1) + 0.15 * math.cos(t * 0.093)) * travel_y)
+            else:
+                x = int((0.5 + 0.36 * math.sin(t * 0.19 + 2.8) + 0.14 * math.cos(t * 0.071)) * travel_x)
+                y = int((0.5 + 0.33 * math.cos(t * 0.17 + 0.3) + 0.17 * math.sin(t * 0.089)) * travel_y)
+            smoke = layer.crop((x, y, x + width, y + height))
+            result = Image.alpha_composite(result, smoke)
+        return result.convert("RGB")
+
+    def _stylize_ancient_background(self, image: Image.Image) -> Image.Image:
+        gray = ImageOps.grayscale(image)
+        toned = ImageOps.colorize(gray, black=(8, 13, 14), white=(205, 214, 212))
+        shade = self._ancient_vignette_mask(*toned.size)
+        overlay = Image.new("RGBA", toned.size, (0, 0, 0, 0))
+        overlay.putalpha(shade)
+        return Image.alpha_composite(toned.convert("RGBA"), overlay).convert("RGB")
+
+    @lru_cache(maxsize=8)
+    def _ancient_vignette_mask(self, width: int, height: int) -> Image.Image:
+        yy, xx = np.mgrid[0:height, 0:width]
+        nx = (xx - width / 2) / max(1.0, width / 2)
+        ny = (yy - height / 2) / max(1.0, height / 2)
+        vignette = np.clip((nx * nx + ny * ny - 0.18) * 105.0, 0.0, 145.0).astype(np.uint8)
+        return Image.fromarray(vignette, mode="L")
 
     def _background_frame(
         self,
