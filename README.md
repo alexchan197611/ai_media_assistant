@@ -14,6 +14,9 @@
 <a href="images/demo.mp4">
   <img src="images/demo.png" width="360" alt="点击观看演示视频">
 </a>
+<a href="images/demo.mp4">
+  <img src="images/demo2.png" width="360" alt="点击观看古风模板演示视频">
+</a>
 </p>
 
 - [直接打开演示视频 demo.mp4](images/demo.mp4)
@@ -86,6 +89,8 @@ ai_caption_video/
       OFL.txt
   images/
     gui-main.png
+    demo.png
+    demo2.png
     demo.mp4
   output/
     .gitkeep
