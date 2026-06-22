@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+.next/
+
+# Environment and local settings
+.env
+.env.*
+!.env.example
+*.log
+
+# Runtime storage
+storage/projects/*
+storage/uploads/*
+storage/outputs/*
+!storage/projects/.gitkeep
+!storage/uploads/.gitkeep
+!storage/outputs/.gitkeep
+
+# Models and generated media
+models/
+checkpoints/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.onnx
+*.mp4
+*.wav
+*.mp3
+*.flac
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
