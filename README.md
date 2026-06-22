@@ -20,7 +20,7 @@
 </p>
 
 - [直接打开演示视频 demo.mp4](images/demo.mp4)
-- [观看 B 站视频演示](https://www.bilibili.com/video/BV1A9Ld6BEf8)
+- [观看 B 站视频演示]([https://www.bilibili.com/video/BV1A9Ld6BEf8](https://www.bilibili.com/video/BV18y7P66EAQ/))
 
   我也封装好了EXE，各位懒得自己编译的，到B站视频评论区里看看夸克网盘下载链接。
 
