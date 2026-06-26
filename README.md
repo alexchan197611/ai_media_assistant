@@ -14,6 +14,12 @@ AI Media Assistant Web 是一款面向中文内容创作者的本地短视频生
   <img src="docs/images/ancient-demo.png" alt="古风字幕模板效果" width="48%">
 </p>
 
+
+- [直接打开演示视频 demo.mp4](images/demo.mp4)
+- [观看 B 站视频演示](https://www.bilibili.com/video/BV18y7P66EAQ)
+
+  新的教程视频正在录制中，很快会和大家见面，到B站视频评论区里看看夸克网盘下载链接。
+  
 ## 主要能力
 
 - 本地 Web 编辑器：项目创建、打开、复制、删除和自动保存。
