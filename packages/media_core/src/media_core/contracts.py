@@ -1,0 +1,9 @@
+from typing import Any, Protocol
+
+class LayoutEngine(Protocol):
+    def layout(self, text: str, canvas: dict[str, Any], style: dict[str, Any]) -> dict[str, Any]: ...
+class TTSAdapter(Protocol):
+    def synthesize(self, text: str, settings: dict[str, Any], output_path: str) -> int: ...
+class RenderAdapter(Protocol):
+    def render(self, project: dict[str, Any], output_path: str, progress) -> None: ...
+

@@ -4,12 +4,18 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+.pytest_cache/
+*.sqlite3
+*.db
 
 # Node
 node_modules/
 dist/
 .vite/
 .next/
+*.tsbuildinfo
+apps/web/vite.config.js
+apps/web/vite.config.d.ts
 
 # Environment and local settings
 .env
@@ -21,9 +27,15 @@ dist/
 storage/projects/*
 storage/uploads/*
 storage/outputs/*
+storage/resources/*
 !storage/projects/.gitkeep
 !storage/uploads/.gitkeep
 !storage/outputs/.gitkeep
+!storage/resources/.gitkeep
+!storage/resources/README.md
+storage/models/
+storage/fonts/
+storage/voices/
 
 # Models and generated media
 models/

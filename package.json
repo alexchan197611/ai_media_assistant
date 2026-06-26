@@ -1,0 +1,21 @@
+{
+  "name": "ai-media-assistant",
+  "private": true,
+  "scripts": {
+    "predev": "powershell -ExecutionPolicy Bypass -File scripts/stop_local_services.ps1",
+    "dev": "concurrently -k -n api,web,worker -c blue,magenta,green \"npm:dev:api\" \"npm:dev:web\" \"npm:worker\"",
+    "dev:api": ".venv\\Scripts\\python -m uvicorn app.main:app --app-dir apps/api --host 127.0.0.1 --port 8123",
+    "dev:web": "npm --prefix apps/web run dev -- --host 127.0.0.1",
+    "serve": "concurrently -k -n api,worker -c blue,green \"npm:serve:api\" \"npm:worker\"",
+    "preserve": "powershell -ExecutionPolicy Bypass -File scripts/stop_local_services.ps1",
+    "serve:api": ".venv\\Scripts\\python -m uvicorn app.main:app --app-dir apps/api --host 127.0.0.1 --port 8123",
+    "test": "npm run test:api && npm run test:web",
+    "test:api": ".venv\\Scripts\\python -m pytest",
+    "test:web": "npm --prefix apps/web run test",
+    "build": "npm --prefix apps/web run build",
+    "db:upgrade": ".venv\\Scripts\\python -m alembic -c apps/api/alembic.ini upgrade head",
+    "worker": ".venv\\Scripts\\python -m workers.render_worker.main",
+    "stop": "powershell -ExecutionPolicy Bypass -File scripts/stop_local_services.ps1"
+  },
+  "devDependencies": { "concurrently": "^9.2.1" }
+}

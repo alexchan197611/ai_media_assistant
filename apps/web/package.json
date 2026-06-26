@@ -1,0 +1,10 @@
+{
+  "name": "@ai-media-assistant/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "tsc -b && vite build", "test": "vitest run" },
+  "dependencies": { "@tanstack/react-query": "^5.83.0", "lucide-react": "^0.468.0", "react": "^19.1.0", "react-dom": "^19.1.0" },
+  "devDependencies": { "@testing-library/react": "^16.3.0", "@types/react": "^19.1.0", "@types/react-dom": "^19.1.0", "@vitejs/plugin-react": "^4.6.0", "jsdom": "^26.1.0", "typescript": "~5.8.3", "vite": "^7.0.0", "vitest": "^3.2.4" }
+}
+
