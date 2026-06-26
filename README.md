@@ -127,3 +127,39 @@ npm run build
 ```
 
 SQLite 文件及上传、输出、模型、字体和用户音色均受 `.gitignore` 保护，不会进入版本库。
+
+## Windows Release 使用
+
+下载 Release zip 后解压，首次运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1
+```
+
+以后启动：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_windows.ps1
+```
+
+打开：
+
+```text
+http://127.0.0.1:8123
+```
+
+更完整的图文前置说明见：[docs/USER_GUIDE.md](docs/USER_GUIDE.md)。
+
+Release 包建议包含 `apps/web/dist`，这样普通用户不需要理解前端开发服务器；启动脚本会从 FastAPI 直接托管已构建 Web UI。源码仓库仍忽略 `dist`，只在打包时生成并放入 zip。
+
+维护者打包命令：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1 -Version v2.0.0
+```
+
+生成文件默认位于：
+
+```text
+D:\Codex\outputs\ai-media-assistant-web-v2.0.0-windows-local.zip
+```
