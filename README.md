@@ -9,9 +9,9 @@ AI Media Assistant Web 是一款面向中文内容创作者的本地短视频生
 </p>
 
 <p align="center">
-  <img src="docs/images/emotion-demo.png" alt="情感模板视频效果" width="48%">
+  <a href="docs/images/demo2.mp4"><img src="docs/images/emotion-demo.png" alt="情感模板视频效果" width="48%"></a>
   &nbsp;&nbsp;
-  <img src="docs/images/ancient-demo.png" alt="古风字幕模板效果" width="48%">
+  <a href="docs/images/20260621015056.mp4"><img src="docs/images/ancient-demo.png" alt="古风字幕模板效果" width="48%"></a>
 </p>
 
 
