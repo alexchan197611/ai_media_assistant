@@ -35,6 +35,8 @@ app.include_router(projects_router, prefix="/api")
 WEB_DIST = Path(__file__).resolve().parents[3] / "apps" / "web" / "dist"
 if (WEB_DIST / "assets").exists():
     app.mount("/assets", StaticFiles(directory=WEB_DIST / "assets"), name="web-assets")
+if (WEB_DIST / "brand").exists():
+    app.mount("/brand", StaticFiles(directory=WEB_DIST / "brand"), name="web-brand")
 
 
 @app.get("/{path:path}", include_in_schema=False)

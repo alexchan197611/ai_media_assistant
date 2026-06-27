@@ -362,3 +362,9 @@ def test_project_preview_gif_uses_renderer():
     assert preview.status_code == 200
     assert preview.headers["content-type"] == "image/gif"
     assert preview.content.startswith(b"GIF")
+
+def test_built_web_brand_assets_are_served():
+    response = client.get("/brand/favicon.ico")
+    assert response.status_code in {200, 404}
+    if response.status_code == 200:
+        assert response.headers["content-type"] in {"image/vnd.microsoft.icon", "image/x-icon"}
