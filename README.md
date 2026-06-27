@@ -4,6 +4,7 @@ AI Media Assistant Web 是一款面向中文内容创作者的本地短视频生
 
 服务默认只监听 `127.0.0.1`，适合个人电脑本地使用。
 
+# UI及输出成果展示
 <p align="center">
   <img src="docs/images/main-gui.png" alt="AI Media Assistant Web 主界面" width="100%">
 </p>
