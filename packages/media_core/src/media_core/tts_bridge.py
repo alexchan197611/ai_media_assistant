@@ -233,14 +233,24 @@ def _is_qwen_model_dir(path: Path) -> bool:
 
 
 def qwen_python_for_model(model_dir: Path) -> Path:
-    candidates = [
-        model_dir / "conda_env" / "python.exe",
-        model_dir / "conda_env" / "bin" / "python",
-        model_dir / ".venv" / "Scripts" / "python.exe",
-        model_dir / ".venv" / "bin" / "python",
-        model_dir / "venv" / "Scripts" / "python.exe",
-        model_dir / "venv" / "bin" / "python",
-    ]
+    if os.name == "nt":
+        candidates = [
+            model_dir / "conda_env" / "python.exe",
+            model_dir / "conda_env" / "bin" / "python",
+            model_dir / ".venv" / "Scripts" / "python.exe",
+            model_dir / ".venv" / "bin" / "python",
+            model_dir / "venv" / "Scripts" / "python.exe",
+            model_dir / "venv" / "bin" / "python",
+        ]
+    else:
+        candidates = [
+            model_dir / "conda_env" / "bin" / "python",
+            model_dir / ".venv" / "bin" / "python",
+            model_dir / "venv" / "bin" / "python",
+            model_dir / "conda_env" / "python.exe",
+            model_dir / ".venv" / "Scripts" / "python.exe",
+            model_dir / "venv" / "Scripts" / "python.exe",
+        ]
     for path in candidates:
         if path.exists():
             return path

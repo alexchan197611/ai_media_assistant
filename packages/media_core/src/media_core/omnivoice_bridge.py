@@ -143,16 +143,26 @@ _workers_lock = threading.Lock()
 
 
 def default_omnivoice_python(project_dir: Path = DEFAULT_OMNIVOICE_DIR) -> Path:
-    candidates = [
-        project_dir / ".python" / "python.exe",
-        project_dir / ".python" / "bin" / "python",
-        project_dir / ".venv" / "Scripts" / "python.exe",
-        project_dir / ".venv" / "bin" / "python",
-        project_dir / "venv" / "Scripts" / "python.exe",
-        project_dir / "venv" / "bin" / "python",
-        project_dir / "python.exe",
-        project_dir / "bin" / "python",
-    ]
+    if os.name == "nt":
+        candidates = [
+            project_dir / ".python" / "python.exe",
+            project_dir / ".python" / "bin" / "python",
+            project_dir / ".venv" / "Scripts" / "python.exe",
+            project_dir / ".venv" / "bin" / "python",
+            project_dir / "venv" / "Scripts" / "python.exe",
+            project_dir / "venv" / "bin" / "python",
+            project_dir / "python.exe",
+            project_dir / "bin" / "python",
+        ]
+    else:
+        candidates = [
+            project_dir / ".python" / "bin" / "python",
+            project_dir / ".venv" / "bin" / "python",
+            project_dir / "venv" / "bin" / "python",
+            project_dir / "bin" / "python",
+            project_dir / ".python" / "python.exe",
+            project_dir / "python.exe",
+        ]
     for path in candidates:
         if path.exists():
             return path
