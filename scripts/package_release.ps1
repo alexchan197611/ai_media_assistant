@@ -80,6 +80,12 @@ New-Item -ItemType File -Force -Path `
   (Join-Path $StageRoot "storage\uploads\.gitkeep"), `
   (Join-Path $StageRoot "storage\outputs\.gitkeep") | Out-Null
 
+Get-ChildItem -LiteralPath $StageRoot -Recurse -Filter "*.sh" | ForEach-Object {
+  $content = [System.IO.File]::ReadAllText($_.FullName)
+  $content = $content -replace "`r`n", "`n"
+  [System.IO.File]::WriteAllText($_.FullName, $content, [System.Text.UTF8Encoding]::new($false))
+}
+
 if (Test-Path $ZipPath) {
   Remove-Item -LiteralPath $ZipPath -Force
 }
