@@ -63,7 +63,7 @@ echo "Preparing local storage directories..."
 mkdir -p storage/projects storage/uploads storage/outputs storage/resources
 
 echo "Fixing local model executable permissions..."
-find models -type f \( -path "*/bin/python" -o -name "python.exe" \) -exec chmod +x {} \; 2>/dev/null || true
+find models -type f -path "*/bin/python" -exec chmod +x {} \; 2>/dev/null || true
 
 echo "Upgrading SQLite database..."
 .venv/bin/python -m alembic -c apps/api/alembic.ini upgrade head

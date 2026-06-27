@@ -160,13 +160,19 @@ def default_omnivoice_python(project_dir: Path = DEFAULT_OMNIVOICE_DIR) -> Path:
             project_dir / ".venv" / "bin" / "python",
             project_dir / "venv" / "bin" / "python",
             project_dir / "bin" / "python",
-            project_dir / ".python" / "python.exe",
-            project_dir / "python.exe",
         ]
     for path in candidates:
         if path.exists():
             return path
     return candidates[0]
+
+
+def resolve_omnivoice_python(project_dir: Path, preferred: Path | str | None = None) -> Path:
+    preferred_path = Path(preferred) if preferred else None
+    if preferred_path and preferred_path.exists():
+        if os.name == "nt" or preferred_path.suffix.lower() != ".exe":
+            return preferred_path
+    return default_omnivoice_python(project_dir)
 
 
 def resolve_omnivoice_dir(preferred: Path | str | None = None) -> Path:
@@ -184,9 +190,9 @@ def generate_omnivoice_audio(texts: list[str], output_dir: Path, options: OmniVo
         return []
 
     project_dir = resolve_omnivoice_dir(options.project_dir)
-    python_exe = Path(options.python_exe)
+    python_exe = resolve_omnivoice_python(project_dir, options.python_exe)
     if _is_omnivoice_dir(project_dir):
-        python_exe = default_omnivoice_python(project_dir) if not python_exe.exists() else python_exe
+        python_exe = resolve_omnivoice_python(project_dir, python_exe)
     if not project_dir.exists():
         raise FileNotFoundError(f"OmniVoice 项目目录不存在：{project_dir}")
     if not python_exe.exists():

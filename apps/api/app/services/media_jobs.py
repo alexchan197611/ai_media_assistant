@@ -27,6 +27,7 @@ from media_core.omnivoice_bridge import (
     OmniVoiceOptions,
     default_omnivoice_python,
     generate_omnivoice_audio,
+    resolve_omnivoice_python,
     resolve_omnivoice_dir,
 )
 from media_core.font_utils import find_chinese_font
@@ -207,7 +208,7 @@ def validate_qwen_settings(tts: dict) -> None:
 def validate_omnivoice_settings(project: Project, tts: dict) -> None:
     explicit_project_dir = str(tts.get("omnivoice_project_dir") or "").strip()
     project_dir = Path(explicit_project_dir) if explicit_project_dir else resolve_omnivoice_dir(DEFAULT_OMNIVOICE_DIR)
-    python_exe = Path(str(tts.get("omnivoice_python") or "") or default_omnivoice_python(project_dir))
+    python_exe = resolve_omnivoice_python(project_dir, str(tts.get("omnivoice_python") or "").strip() or None)
     if not project_dir.exists():
         raise JobValidationError(f"OmniVoice 项目目录不存在：{project_dir}")
     if not (project_dir / "omnivoice").exists():
@@ -330,7 +331,7 @@ def generate_project_tts(project: Project, segments: list[Segment], cancel_check
         mode = project.tts_settings.get("omnivoice_mode", "auto")
     options = OmniVoiceOptions(
         project_dir=project_dir,
-        python_exe=Path(project.tts_settings.get("omnivoice_python") or default_omnivoice_python(project_dir)),
+        python_exe=resolve_omnivoice_python(project_dir, project.tts_settings.get("omnivoice_python")),
         mode=mode,
         ref_audio=ref_audio,
         ref_text=ref_text,

@@ -247,9 +247,6 @@ def qwen_python_for_model(model_dir: Path) -> Path:
             model_dir / "conda_env" / "bin" / "python",
             model_dir / ".venv" / "bin" / "python",
             model_dir / "venv" / "bin" / "python",
-            model_dir / "conda_env" / "python.exe",
-            model_dir / ".venv" / "Scripts" / "python.exe",
-            model_dir / "venv" / "Scripts" / "python.exe",
         ]
     for path in candidates:
         if path.exists():

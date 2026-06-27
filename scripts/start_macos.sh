@@ -20,7 +20,7 @@ if command -v lsof >/dev/null 2>&1 && lsof -ti tcp:8123 >/dev/null 2>&1; then
 fi
 
 mkdir -p storage/projects storage/uploads storage/outputs
-find models -type f \( -path "*/bin/python" -o -name "python.exe" \) -exec chmod +x {} \; 2>/dev/null || true
+find models -type f -path "*/bin/python" -exec chmod +x {} \; 2>/dev/null || true
 
 echo "Starting AI Media Assistant..."
 echo "Open http://127.0.0.1:8123 in your browser."
