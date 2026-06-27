@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $PSScriptRoot
-$PackageName = "ai-media-assistant-web-$Version-windows-local"
+$PackageName = "ai-media-assistant-web-$Version-local"
 $StageRoot = Join-Path $OutputDir $PackageName
 $ZipPath = Join-Path $OutputDir "$PackageName.zip"
 

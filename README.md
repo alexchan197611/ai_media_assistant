@@ -54,9 +54,11 @@ storage/
   outputs/             导出视频
 ```
 
-## Windows Release 使用
+## Release 使用
 
-下载 Release zip 后解压。首次运行请在项目目录打开 PowerShell：
+下载 Release zip 后解压。
+
+Windows 用户首次运行请在项目目录打开 PowerShell：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1
@@ -74,11 +76,30 @@ powershell -ExecutionPolicy Bypass -File scripts\start_windows.ps1
 http://127.0.0.1:8123
 ```
 
+macOS 用户首次运行请在项目目录打开 Terminal：
+
+```bash
+chmod +x scripts/setup_macos.sh scripts/start_macos.sh
+./scripts/setup_macos.sh
+```
+
+以后启动：
+
+```bash
+./scripts/start_macos.sh
+```
+
+打开：
+
+```text
+http://127.0.0.1:8123
+```
+
 完整使用说明见：[docs/USER_GUIDE.md](docs/USER_GUIDE.md)。
 
 ## 依赖要求
 
-- Windows 10/11
+- Windows 10/11 或 macOS
 - Python 3.11+
 - Node.js 20+
 - FFmpeg，建议加入系统 PATH
@@ -162,7 +183,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1 -Version v2
 默认输出：
 
 ```text
-D:\Codex\outputs\ai-media-assistant-web-v2.0.0-windows-local.zip
+D:\Codex\outputs\ai-media-assistant-web-v2.0.0-local.zip
 ```
 
 打包脚本会包含已构建前端和可分发资源，并排除生成视频、上传文件、数据库、缓存、虚拟环境和依赖目录。
