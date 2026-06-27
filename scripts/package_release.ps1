@@ -85,7 +85,25 @@ if (Test-Path $ZipPath) {
 }
 
 Write-Host "Creating zip: $ZipPath"
-Compress-Archive -Path $StageRoot -DestinationPath $ZipPath -Force
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+$zip = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+try {
+  Get-ChildItem -LiteralPath $StageRoot -Recurse -File | ForEach-Object {
+    $relativePath = $_.FullName.Substring($StageRoot.Length).TrimStart("\", "/")
+    $entryName = (Join-Path $PackageName $relativePath).Replace("\", "/")
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+      $zip,
+      $_.FullName,
+      $entryName,
+      [System.IO.Compression.CompressionLevel]::Optimal
+    ) | Out-Null
+  }
+}
+finally {
+  $zip.Dispose()
+}
 
 Write-Host "Release package ready:"
 Write-Host $ZipPath
