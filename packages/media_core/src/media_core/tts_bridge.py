@@ -16,10 +16,15 @@ from .legacy_config import WEB_PROJECT_ROOT
 FROZEN = getattr(sys, "frozen", False)
 APP_DIR = Path(sys.executable).resolve().parent if FROZEN else WEB_PROJECT_ROOT
 PORTABLE_TTS_MODEL_DIR = APP_DIR / "models" / "Qwen3-TTS-1.7B"
+PORTABLE_TTS_MODEL_DIR_ALT = APP_DIR / "model" / "Qwen3-TTS-1.7B"
 WEB_TTS_MODEL_DIR = WEB_PROJECT_ROOT / "models" / "Qwen3-TTS-1.7B"
+WEB_TTS_MODEL_DIR_ALT = WEB_PROJECT_ROOT / "model" / "Qwen3-TTS-1.7B"
 _WINDOWS_TTS_MODEL_DIR = Path("E:/Qwen3-TTS-1.7B/Qwen3-TTS-1.7B")
 LEGACY_TTS_MODEL_DIR = _WINDOWS_TTS_MODEL_DIR if os.name == "nt" and _WINDOWS_TTS_MODEL_DIR.exists() else WEB_PROJECT_ROOT / "models" / "Qwen3-TTS-1.7B"
-DEFAULT_TTS_MODEL_DIR = PORTABLE_TTS_MODEL_DIR if PORTABLE_TTS_MODEL_DIR.exists() else (WEB_TTS_MODEL_DIR if WEB_TTS_MODEL_DIR.exists() else LEGACY_TTS_MODEL_DIR)
+DEFAULT_TTS_MODEL_DIR = next(
+    (path for path in (PORTABLE_TTS_MODEL_DIR, PORTABLE_TTS_MODEL_DIR_ALT, WEB_TTS_MODEL_DIR, WEB_TTS_MODEL_DIR_ALT) if path.exists()),
+    LEGACY_TTS_MODEL_DIR,
+)
 TTS_HELPER_PATH = WEB_PROJECT_ROOT / "storage" / "projects" / "ai_media_assistant_qwen_tts_helper.py"
 RESULT_PREFIX = "__AI_CAPTION_QWEN_RESULT__ "
 
@@ -114,7 +119,7 @@ class QwenTTSWorker:
         if not self.model_dir.exists():
             raise FileNotFoundError(f"TTS 模型目录不存在：{self.model_dir}")
         if not self.python_exe.exists():
-            raise FileNotFoundError(f"找不到模型自带 Python：{self.python_exe}")
+            raise FileNotFoundError(qwen_python_error_message(self.model_dir, self.python_exe))
 
         _ensure_helper_script()
         startupinfo = None
@@ -152,7 +157,7 @@ def generate_tts_audio(texts: list[str], output_dir: Path, options: TTSOptions, 
     if not model_dir.exists():
         raise FileNotFoundError(f"TTS 模型目录不存在：{model_dir}")
     if not python_exe.exists():
-        raise FileNotFoundError(f"找不到模型自带 Python：{python_exe}")
+        raise FileNotFoundError(qwen_python_error_message(model_dir, python_exe))
 
     output_dir.mkdir(parents=True, exist_ok=True)
     _ensure_helper_script()
@@ -203,11 +208,9 @@ def shutdown_qwen_tts_workers() -> None:
 
 
 def resolve_qwen_model_dir(preferred: Path | str | None = None) -> Path:
-    portable = PORTABLE_TTS_MODEL_DIR
-    if _is_qwen_model_dir(portable):
-        return portable
-    if _is_qwen_model_dir(WEB_TTS_MODEL_DIR):
-        return WEB_TTS_MODEL_DIR
+    for path in (PORTABLE_TTS_MODEL_DIR, PORTABLE_TTS_MODEL_DIR_ALT, WEB_TTS_MODEL_DIR, WEB_TTS_MODEL_DIR_ALT):
+        if _is_qwen_model_dir(path):
+            return path
     if preferred:
         preferred_path = Path(preferred)
         if _is_qwen_model_dir(preferred_path):
@@ -252,6 +255,31 @@ def qwen_python_for_model(model_dir: Path) -> Path:
         if path.exists():
             return path
     return candidates[0]
+
+
+def qwen_python_error_message(model_dir: Path, python_exe: Path | None = None) -> str:
+    python_exe = python_exe or qwen_python_for_model(model_dir)
+    if os.name != "nt" and _has_windows_qwen_runtime(model_dir):
+        return (
+            "检测到 Windows 版 Qwen3-TTS 模型运行环境，macOS 不能执行 python.exe。"
+            f"请使用 macOS arm64 版模型包，解压后应包含：{model_dir / '.venv' / 'bin' / 'python'} "
+            f"或 {model_dir / 'conda_env' / 'bin' / 'python'}。"
+        )
+    return f"找不到模型自带 Python：{python_exe}"
+
+
+def _has_windows_qwen_runtime(model_dir: Path) -> bool:
+    windows_runtime_files = [
+        model_dir / "conda_env" / "python.exe",
+        model_dir / ".venv" / "Scripts" / "python.exe",
+        model_dir / "venv" / "Scripts" / "python.exe",
+    ]
+    mac_runtime_files = [
+        model_dir / "conda_env" / "bin" / "python",
+        model_dir / ".venv" / "bin" / "python",
+        model_dir / "venv" / "bin" / "python",
+    ]
+    return any(path.exists() for path in windows_runtime_files) and not any(path.exists() for path in mac_runtime_files)
 
 
 def _tts_env(model_dir: Path) -> dict[str, str]:

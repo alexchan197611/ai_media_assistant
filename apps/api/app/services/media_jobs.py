@@ -27,12 +27,21 @@ from media_core.omnivoice_bridge import (
     OmniVoiceOptions,
     default_omnivoice_python,
     generate_omnivoice_audio,
+    omnivoice_python_error_message,
     resolve_omnivoice_python,
     resolve_omnivoice_dir,
 )
 from media_core.font_utils import find_chinese_font
 from media_core.renderer import CaptionRenderer, TextToken
-from media_core.tts_bridge import DEFAULT_TTS_MODEL_DIR, TTSGenerationCancelled, TTSOptions, generate_tts_audio, resolve_qwen_model_dir
+from media_core.tts_bridge import (
+    DEFAULT_TTS_MODEL_DIR,
+    TTSGenerationCancelled,
+    TTSOptions,
+    generate_tts_audio,
+    qwen_python_error_message,
+    qwen_python_for_model,
+    resolve_qwen_model_dir,
+)
 from media_core.video_builder import build_video_from_token_segments, caption_transition_for_key
 
 
@@ -188,7 +197,7 @@ def validate_qwen_settings(tts: dict) -> None:
     if not model_dir.exists():
         raise JobValidationError(f"Qwen3-TTS 模型目录不存在：{model_dir}")
     if not python_exe.exists():
-        raise JobValidationError(f"Qwen3-TTS Python 不存在：{python_exe}")
+        raise JobValidationError(qwen_python_error_message(model_dir, python_exe))
     if explicit_model_dir and resolve_qwen_model_dir(model_dir) != model_dir:
         raise JobValidationError(f"Qwen3-TTS 模型目录不完整：{model_dir}")
 
@@ -214,7 +223,7 @@ def validate_omnivoice_settings(project: Project, tts: dict) -> None:
     if not (project_dir / "omnivoice").exists():
         raise JobValidationError(f"OmniVoice 项目目录不完整：{project_dir}")
     if not python_exe.exists():
-        raise JobValidationError(f"OmniVoice Python 不存在：{python_exe}")
+        raise JobValidationError(omnivoice_python_error_message(project_dir, python_exe))
 
     try:
         speed = float(tts.get("omnivoice_speed", 1.0))
@@ -570,21 +579,6 @@ def resolve_ffmpeg_path() -> str:
         return str(path) if path else ""
     except Exception:
         return ""
-
-
-def qwen_python_for_model(model_dir: Path) -> Path:
-    candidates = [
-        model_dir / "conda_env" / "python.exe",
-        model_dir / "conda_env" / "bin" / "python",
-        model_dir / ".venv" / "Scripts" / "python.exe",
-        model_dir / ".venv" / "bin" / "python",
-        model_dir / "venv" / "Scripts" / "python.exe",
-        model_dir / "venv" / "bin" / "python",
-    ]
-    for path in candidates:
-        if path.exists():
-            return path
-    return candidates[0]
 
 
 def wav_duration_ms(path: Path) -> int | None:

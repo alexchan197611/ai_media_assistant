@@ -16,10 +16,15 @@ from .legacy_config import WEB_PROJECT_ROOT
 FROZEN = getattr(sys, "frozen", False)
 APP_DIR = Path(sys.executable).resolve().parent if FROZEN else WEB_PROJECT_ROOT
 PORTABLE_OMNIVOICE_DIR = APP_DIR / "models" / "OmniVoice"
+PORTABLE_OMNIVOICE_DIR_ALT = APP_DIR / "model" / "OmniVoice"
 WEB_OMNIVOICE_DIR = WEB_PROJECT_ROOT / "models" / "OmniVoice"
+WEB_OMNIVOICE_DIR_ALT = WEB_PROJECT_ROOT / "model" / "OmniVoice"
 _WINDOWS_OMNIVOICE_DIR = Path("D:/Codex/workspaces/OmniVoice")
 WORKSPACE_OMNIVOICE_DIR = _WINDOWS_OMNIVOICE_DIR if os.name == "nt" and _WINDOWS_OMNIVOICE_DIR.exists() else WEB_PROJECT_ROOT / "models" / "OmniVoice"
-DEFAULT_OMNIVOICE_DIR = PORTABLE_OMNIVOICE_DIR if PORTABLE_OMNIVOICE_DIR.exists() else (WEB_OMNIVOICE_DIR if WEB_OMNIVOICE_DIR.exists() else WORKSPACE_OMNIVOICE_DIR)
+DEFAULT_OMNIVOICE_DIR = next(
+    (path for path in (PORTABLE_OMNIVOICE_DIR, PORTABLE_OMNIVOICE_DIR_ALT, WEB_OMNIVOICE_DIR, WEB_OMNIVOICE_DIR_ALT) if path.exists()),
+    WORKSPACE_OMNIVOICE_DIR,
+)
 OMNIVOICE_HELPER_PATH = WEB_PROJECT_ROOT / "storage" / "projects" / "ai_media_assistant_omnivoice_helper.py"
 RESULT_PREFIX = "__AI_CAPTION_OMNIVOICE_RESULT__ "
 
@@ -175,11 +180,20 @@ def resolve_omnivoice_python(project_dir: Path, preferred: Path | str | None = N
     return default_omnivoice_python(project_dir)
 
 
+def omnivoice_python_error_message(project_dir: Path, python_exe: Path | None = None) -> str:
+    python_exe = python_exe or default_omnivoice_python(project_dir)
+    if os.name != "nt" and _has_windows_omnivoice_runtime(project_dir):
+        return (
+            "检测到 Windows 版 OmniVoice 模型运行环境，macOS 不能执行 python.exe。"
+            f"请使用 macOS arm64 版模型包，解压后应包含：{project_dir / '.venv' / 'bin' / 'python'}。"
+        )
+    return f"OmniVoice Python 不存在：{python_exe}"
+
+
 def resolve_omnivoice_dir(preferred: Path | str | None = None) -> Path:
-    if _is_omnivoice_dir(PORTABLE_OMNIVOICE_DIR):
-        return PORTABLE_OMNIVOICE_DIR
-    if _is_omnivoice_dir(WEB_OMNIVOICE_DIR):
-        return WEB_OMNIVOICE_DIR
+    for path in (PORTABLE_OMNIVOICE_DIR, PORTABLE_OMNIVOICE_DIR_ALT, WEB_OMNIVOICE_DIR, WEB_OMNIVOICE_DIR_ALT):
+        if _is_omnivoice_dir(path):
+            return path
     if preferred and _is_omnivoice_dir(Path(preferred)):
         return Path(preferred)
     return WORKSPACE_OMNIVOICE_DIR
@@ -196,7 +210,7 @@ def generate_omnivoice_audio(texts: list[str], output_dir: Path, options: OmniVo
     if not project_dir.exists():
         raise FileNotFoundError(f"OmniVoice 项目目录不存在：{project_dir}")
     if not python_exe.exists():
-        raise FileNotFoundError(f"OmniVoice Python 不存在：{python_exe}")
+        raise FileNotFoundError(omnivoice_python_error_message(project_dir, python_exe))
     if options.mode == "clone" and (not options.ref_audio or not options.ref_audio.exists()):
         raise FileNotFoundError(f"OmniVoice 参考音频不存在：{options.ref_audio}")
 
@@ -249,6 +263,22 @@ def _get_worker(project_dir: Path, python_exe: Path) -> OmniVoiceWorker:
 
 def _is_omnivoice_dir(path: Path) -> bool:
     return path.exists() and (path / "omnivoice").exists()
+
+
+def _has_windows_omnivoice_runtime(project_dir: Path) -> bool:
+    windows_runtime_files = [
+        project_dir / ".python" / "python.exe",
+        project_dir / ".venv" / "Scripts" / "python.exe",
+        project_dir / "venv" / "Scripts" / "python.exe",
+        project_dir / "python.exe",
+    ]
+    mac_runtime_files = [
+        project_dir / ".python" / "bin" / "python",
+        project_dir / ".venv" / "bin" / "python",
+        project_dir / "venv" / "bin" / "python",
+        project_dir / "bin" / "python",
+    ]
+    return any(path.exists() for path in windows_runtime_files) and not any(path.exists() for path in mac_runtime_files)
 
 
 def _omnivoice_env(project_dir: Path) -> dict[str, str]:

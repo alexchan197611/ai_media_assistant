@@ -87,7 +87,23 @@ storage/outputs/               导出视频
 - Qwen 模型位置
 - OmniVoice 模型位置
 
-留空时软件会使用默认搜索位置。模型权重不包含在 Release 包中，需要用户自行准备。
+留空时软件会使用默认搜索位置。推荐把模型放在软件根目录的 `models` 文件夹：
+
+```text
+ai-media-assistant/
+  models/
+    OmniVoice/
+    Qwen3-TTS-1.7B/
+```
+
+macOS 用户不要使用 Windows 模型包。Windows 包里的 `python.exe`、`.dll`、`.pyd` 不能在 macOS 上运行。Mac 可用模型包解压后，目录里应能看到：
+
+```text
+models/OmniVoice/.venv/bin/python
+models/Qwen3-TTS-1.7B/.venv/bin/python
+```
+
+如果不小心把 Windows 模型包放到 Mac，软件会提示“检测到 Windows 版模型运行环境”。这时需要换成 macOS arm64 版模型包。
 
 ## 7. 常见问题
 
