@@ -22,7 +22,7 @@ const fallbackVoicePresets: VoicePreset[] = [
 ].map(name => ({
   id: name,
   name,
-  path: `D:\\Codex\\workspaces\\ai_media_assistant\\storage\\resources\\voice\\${name}.wav`,
+  path: `storage/resources/voice/${name}.wav`,
   reference_text: voiceReferenceText,
 }))
 

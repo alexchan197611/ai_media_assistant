@@ -3,7 +3,6 @@ import time
 import sys
 import os
 import threading
-import msvcrt
 from pathlib import Path
 
 from sqlalchemy import select
@@ -20,7 +19,7 @@ from app.services.worker_status import read_worker_status, write_worker_heartbea
 _current_job_id: str | None = None
 _current_job_lock = threading.Lock()
 _lock_handle = None
-WORKER_LOCK_PATH = Path("D:/Codex/cache/tmp/ai_media_assistant_worker.lock")
+WORKER_LOCK_PATH = ROOT / "storage" / "projects" / "ai_media_assistant_worker.lock"
 
 
 def set_current_job(job_id: str | None) -> None:
@@ -46,7 +45,14 @@ def acquire_worker_lock() -> bool:
     _lock_handle = WORKER_LOCK_PATH.open("a+b")
     _lock_handle.seek(0)
     try:
-        msvcrt.locking(_lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
+        if os.name == "nt":
+            import msvcrt
+
+            msvcrt.locking(_lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(_lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError as exc:
         print("另一个 AI Media Assistant Worker 已在运行，本进程保持旁路等待。")
         return False

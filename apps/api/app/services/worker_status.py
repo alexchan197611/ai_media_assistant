@@ -7,8 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from app.config import ROOT
 
-HEARTBEAT_PATH = Path(os.environ.get("AMA_WORKER_HEARTBEAT_FILE", "D:/Codex/cache/tmp/ai_media_assistant_worker.json"))
+HEARTBEAT_PATH = Path(os.environ.get("AMA_WORKER_HEARTBEAT_FILE", ROOT / "storage" / "projects" / "ai_media_assistant_worker.json"))
 STALE_SECONDS = 8.0
 
 

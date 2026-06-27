@@ -17,7 +17,8 @@ FROZEN = getattr(sys, "frozen", False)
 APP_DIR = Path(sys.executable).resolve().parent if FROZEN else WEB_PROJECT_ROOT
 PORTABLE_TTS_MODEL_DIR = APP_DIR / "models" / "Qwen3-TTS-1.7B"
 WEB_TTS_MODEL_DIR = WEB_PROJECT_ROOT / "models" / "Qwen3-TTS-1.7B"
-LEGACY_TTS_MODEL_DIR = Path("E:/Qwen3-TTS-1.7B/Qwen3-TTS-1.7B") if os.name == "nt" else WEB_PROJECT_ROOT / "models" / "Qwen3-TTS-1.7B"
+_WINDOWS_TTS_MODEL_DIR = Path("E:/Qwen3-TTS-1.7B/Qwen3-TTS-1.7B")
+LEGACY_TTS_MODEL_DIR = _WINDOWS_TTS_MODEL_DIR if os.name == "nt" and _WINDOWS_TTS_MODEL_DIR.exists() else WEB_PROJECT_ROOT / "models" / "Qwen3-TTS-1.7B"
 DEFAULT_TTS_MODEL_DIR = PORTABLE_TTS_MODEL_DIR if PORTABLE_TTS_MODEL_DIR.exists() else (WEB_TTS_MODEL_DIR if WEB_TTS_MODEL_DIR.exists() else LEGACY_TTS_MODEL_DIR)
 TTS_HELPER_PATH = WEB_PROJECT_ROOT / "storage" / "projects" / "ai_media_assistant_qwen_tts_helper.py"
 RESULT_PREFIX = "__AI_CAPTION_QWEN_RESULT__ "

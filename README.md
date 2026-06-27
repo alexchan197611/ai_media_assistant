@@ -136,14 +136,9 @@ models/
 
 ## 本地开发
 
-Windows PowerShell：
+首次安装请先按系统运行对应 setup 脚本。之后常用开发命令在 Windows 和 macOS 下相同：
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\pip install -e ".[dev]"
-npm install
-npm --prefix apps/web install
-npm run db:upgrade
+```bash
 npm run dev
 ```
 
@@ -156,7 +151,7 @@ npm run dev
 
 构建前端后，可以由 FastAPI 直接托管 Web UI：
 
-```powershell
+```bash
 npm run build
 npm run serve
 ```
@@ -169,7 +164,7 @@ http://127.0.0.1:8123
 
 ## 测试
 
-```powershell
+```bash
 npm test
 npm run build
 ```

@@ -17,7 +17,8 @@ FROZEN = getattr(sys, "frozen", False)
 APP_DIR = Path(sys.executable).resolve().parent if FROZEN else WEB_PROJECT_ROOT
 PORTABLE_OMNIVOICE_DIR = APP_DIR / "models" / "OmniVoice"
 WEB_OMNIVOICE_DIR = WEB_PROJECT_ROOT / "models" / "OmniVoice"
-WORKSPACE_OMNIVOICE_DIR = Path("D:/Codex/workspaces/OmniVoice") if os.name == "nt" else WEB_PROJECT_ROOT / "models" / "OmniVoice"
+_WINDOWS_OMNIVOICE_DIR = Path("D:/Codex/workspaces/OmniVoice")
+WORKSPACE_OMNIVOICE_DIR = _WINDOWS_OMNIVOICE_DIR if os.name == "nt" and _WINDOWS_OMNIVOICE_DIR.exists() else WEB_PROJECT_ROOT / "models" / "OmniVoice"
 DEFAULT_OMNIVOICE_DIR = PORTABLE_OMNIVOICE_DIR if PORTABLE_OMNIVOICE_DIR.exists() else (WEB_OMNIVOICE_DIR if WEB_OMNIVOICE_DIR.exists() else WORKSPACE_OMNIVOICE_DIR)
 OMNIVOICE_HELPER_PATH = WEB_PROJECT_ROOT / "storage" / "projects" / "ai_media_assistant_omnivoice_helper.py"
 RESULT_PREFIX = "__AI_CAPTION_OMNIVOICE_RESULT__ "
@@ -237,12 +238,23 @@ def _is_omnivoice_dir(path: Path) -> bool:
 def _omnivoice_env(project_dir: Path) -> dict[str, str]:
     env = dict(**os.environ)
     venv = project_dir / ".venv"
-    site_packages = venv / "Lib" / "site-packages"
     runtime = project_dir / ".python"
-    paths = [venv / "Scripts", venv, runtime, site_packages / "torch" / "lib"]
-    env["PATH"] = ";".join(str(path) for path in paths) + ";" + env.get("PATH", "")
+    site_packages_candidates = [
+        venv / "Lib" / "site-packages",
+        *sorted((venv / "lib").glob("python*/site-packages")),
+    ]
+    site_packages = next((path for path in site_packages_candidates if path.exists()), site_packages_candidates[0])
+    paths = [
+        venv / "Scripts",
+        venv / "bin",
+        venv,
+        runtime,
+        site_packages / "torch" / "lib",
+    ]
+    separator = os.pathsep
+    env["PATH"] = separator.join(str(path) for path in paths) + separator + env.get("PATH", "")
     env["PYTHONHOME"] = ""
-    env["PYTHONPATH"] = ";".join([str(project_dir), str(site_packages)])
+    env["PYTHONPATH"] = separator.join([str(project_dir), str(site_packages)])
     env["HF_HOME"] = str(project_dir / "hf_cache")
     env["HF_HUB_DISABLE_SYMLINKS"] = "1"
     env["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
