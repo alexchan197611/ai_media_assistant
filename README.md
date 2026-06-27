@@ -8,16 +8,8 @@ AI Media Assistant Web 是一款面向中文内容创作者的本地短视频生
   <img src="docs/images/main-gui.png" alt="AI Media Assistant Web 主界面" width="100%">
 </p>
 
-<p align="center">
-  <a href="https://github.com/alexchan197611/ai_caption_video/raw/main/docs/images/demo2.mp4"><img src="docs/images/emotion-demo.png" alt="点击播放情感模板演示视频" width="48%"></a>
-  &nbsp;&nbsp;
-  <a href="https://github.com/user-attachments/assets/c6010d8a-5c08-4af2-81dc-150750757820"><img src="docs/images/ancient-demo.png" alt="点击播放古风模板演示视频" width="48%"></a>
-</p>
+https://github.com/user-attachments/assets/1332d442-f919-4064-ad73-bb960943f4ea
 
-情感模板演示视频：
-https://github.com/alexchan197611/ai_caption_video/raw/main/docs/images/demo2.mp4
-
-古风模板演示视频：
 https://github.com/user-attachments/assets/c6010d8a-5c08-4af2-81dc-150750757820
 
 
