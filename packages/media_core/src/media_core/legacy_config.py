@@ -3,13 +3,13 @@ from pathlib import Path
 import sys
 
 
-WEB_PROJECT_ROOT = Path("D:/Codex/workspaces/ai_media_assistant")
+WEB_PROJECT_ROOT = Path(__file__).resolve().parents[4]
 PROJECT_ROOT = WEB_PROJECT_ROOT
 RESOURCE_ROOT = WEB_PROJECT_ROOT / "storage" / "resources"
 FROZEN = getattr(sys, "frozen", False)
 EXE_DIR = Path(sys.executable).resolve().parent if FROZEN else WEB_PROJECT_ROOT
 BUNDLE_ROOT = Path(getattr(sys, "_MEIPASS", EXE_DIR)) if FROZEN else RESOURCE_ROOT
-DEFAULT_OUTPUT_ROOT = Path("D:/Codex/outputs/ai_media_assistant")
+DEFAULT_OUTPUT_ROOT = WEB_PROJECT_ROOT / "storage" / "outputs"
 
 
 @dataclass(frozen=True)

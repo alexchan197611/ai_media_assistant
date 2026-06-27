@@ -2,16 +2,24 @@ from pathlib import Path
 
 from PIL import ImageFont
 
-from .legacy_config import ANCIENT_FALLBACK_FONT, ANCIENT_FONT
+from .legacy_config import ANCIENT_FALLBACK_FONT, ANCIENT_FONT, BUNDLE_ROOT
 
 
 WINDOWS_FONT_DIR = Path("C:/Windows/Fonts")
-FONT_CANDIDATES = [
-    "msyhbd.ttc",
-    "simheib.ttf",
-    "simhei.ttf",
-    "msyh.ttc",
-    "simsun.ttc",
+FONT_PATH_CANDIDATES = [
+    BUNDLE_ROOT / "fonts" / "ZhiMangXing-Regular.ttf",
+    BUNDLE_ROOT / "fonts" / "HYShangWeiShouShu.ttf",
+    WINDOWS_FONT_DIR / "msyhbd.ttc",
+    WINDOWS_FONT_DIR / "simheib.ttf",
+    WINDOWS_FONT_DIR / "simhei.ttf",
+    WINDOWS_FONT_DIR / "msyh.ttc",
+    WINDOWS_FONT_DIR / "simsun.ttc",
+    Path("/System/Library/Fonts/PingFang.ttc"),
+    Path("/System/Library/Fonts/STHeiti Light.ttc"),
+    Path("/System/Library/Fonts/STHeiti Medium.ttc"),
+    Path("/Library/Fonts/Arial Unicode.ttf"),
+    Path("/System/Library/Fonts/Supplemental/Songti.ttc"),
+    Path("/System/Library/Fonts/Supplemental/Heiti TC.ttc"),
 ]
 
 
@@ -22,14 +30,13 @@ def find_chinese_font(custom_font: str | None = None) -> str:
             return str(path)
         raise FileNotFoundError(f"Font file not found: {custom_font}")
 
-    for name in FONT_CANDIDATES:
-        path = WINDOWS_FONT_DIR / name
+    for path in FONT_PATH_CANDIDATES:
         if path.exists():
             return str(path)
 
     raise FileNotFoundError(
-        "No Chinese font found. Pass --font with a .ttf/.ttc path, "
-        "for example C:\\Windows\\Fonts\\msyhbd.ttc."
+        "No Chinese font found. Put a .ttf/.ttc font in storage/resources/fonts, "
+        "or set a font path in the Web settings."
     )
 
 
