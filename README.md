@@ -180,7 +180,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1 -Version v2
 默认输出：
 
 ```text
-D:\Codex\outputs\ai-media-assistant-web-v2.0.0-local.zip
+D:\Codex\outputs\ai-media-assistant.zip
 ```
 
 打包脚本会包含已构建前端和可分发资源，并排除生成视频、上传文件、数据库、缓存、虚拟环境和依赖目录。
