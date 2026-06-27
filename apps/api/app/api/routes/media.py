@@ -6,13 +6,14 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.config import ROOT
 from app.models import Asset, AssetKind, JobType, Project
 from app.schemas import AssetRead, JobRead, ModelStatus, MusicTrackRead, VoicePresetRead
 from app.services.media_jobs import JobValidationError, create_job, model_status, render_project_preview_gif, render_project_preview_png
 from media_core.music_library import discover_music_tracks, select_random_music
 
 router = APIRouter(tags=["media"])
-VOICE_DIR = Path("D:/Codex/workspaces/ai_media_assistant/storage/resources/voice")
+VOICE_DIR = ROOT / "storage" / "resources" / "voice"
 VOICE_REFERENCE_TEXT = "你相信吗,一个不会乐器,不会唱歌,甚至五音不全的人今天也能在一分钟内,制作出自己的原创歌曲 "
 VOICE_PRESET_ORDER = [
     "男性沧桑旁白",

@@ -11,14 +11,15 @@ import subprocess
 import sys
 import threading
 
+from .legacy_config import WEB_PROJECT_ROOT
 
 FROZEN = getattr(sys, "frozen", False)
-APP_DIR = Path(sys.executable).resolve().parent if FROZEN else Path("D:/Codex/workspaces/ai_media_assistant")
+APP_DIR = Path(sys.executable).resolve().parent if FROZEN else WEB_PROJECT_ROOT
 PORTABLE_OMNIVOICE_DIR = APP_DIR / "models" / "OmniVoice"
-WEB_OMNIVOICE_DIR = Path("D:/Codex/workspaces/ai_media_assistant/models/OmniVoice")
-WORKSPACE_OMNIVOICE_DIR = Path("D:/Codex/workspaces/OmniVoice")
+WEB_OMNIVOICE_DIR = WEB_PROJECT_ROOT / "models" / "OmniVoice"
+WORKSPACE_OMNIVOICE_DIR = Path("D:/Codex/workspaces/OmniVoice") if os.name == "nt" else WEB_PROJECT_ROOT / "models" / "OmniVoice"
 DEFAULT_OMNIVOICE_DIR = PORTABLE_OMNIVOICE_DIR if PORTABLE_OMNIVOICE_DIR.exists() else (WEB_OMNIVOICE_DIR if WEB_OMNIVOICE_DIR.exists() else WORKSPACE_OMNIVOICE_DIR)
-OMNIVOICE_HELPER_PATH = Path("D:/Codex/cache/tmp/ai_media_assistant_omnivoice_helper.py")
+OMNIVOICE_HELPER_PATH = WEB_PROJECT_ROOT / "storage" / "projects" / "ai_media_assistant_omnivoice_helper.py"
 RESULT_PREFIX = "__AI_CAPTION_OMNIVOICE_RESULT__ "
 
 
@@ -143,9 +144,13 @@ _workers_lock = threading.Lock()
 def default_omnivoice_python(project_dir: Path = DEFAULT_OMNIVOICE_DIR) -> Path:
     candidates = [
         project_dir / ".python" / "python.exe",
+        project_dir / ".python" / "bin" / "python",
         project_dir / ".venv" / "Scripts" / "python.exe",
+        project_dir / ".venv" / "bin" / "python",
         project_dir / "venv" / "Scripts" / "python.exe",
+        project_dir / "venv" / "bin" / "python",
         project_dir / "python.exe",
+        project_dir / "bin" / "python",
     ]
     for path in candidates:
         if path.exists():

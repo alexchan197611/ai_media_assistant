@@ -6,7 +6,7 @@ from app.db.session import get_db
 from app.main import app
 from app.models import Asset, AssetKind, Project
 from app.services.background_matcher import BackgroundResource, choose_best_resource
-from app.services.media_jobs import font_path_for_project, make_video_config
+from app.services.media_jobs import font_path_for_project, make_video_config, require_voice_preset_path
 from pathlib import Path
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=__import__("sqlalchemy").pool.StaticPool)
@@ -289,6 +289,13 @@ def test_bgm_library_endpoints_are_available():
     assert random_track.status_code in {200, 404}
     if random_track.status_code == 200:
         assert {"id", "name", "path", "mood", "bpm"} <= set(random_track.json())
+
+def test_voice_preset_library_uses_project_resource_dir():
+    response = client.get("/api/voice/presets")
+    assert response.status_code == 200
+    presets = response.json()
+    assert any(item["id"] == "女性温暖" for item in presets)
+    assert require_voice_preset_path({"voice_preset_id": "女性温暖"}).name == "女性温暖.wav"
 
 def test_asset_upload_and_content():
     response = client.post(

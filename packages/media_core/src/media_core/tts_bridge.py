@@ -11,14 +11,15 @@ import subprocess
 import sys
 import threading
 
+from .legacy_config import WEB_PROJECT_ROOT
 
 FROZEN = getattr(sys, "frozen", False)
-APP_DIR = Path(sys.executable).resolve().parent if FROZEN else Path("D:/Codex/workspaces/ai_media_assistant")
+APP_DIR = Path(sys.executable).resolve().parent if FROZEN else WEB_PROJECT_ROOT
 PORTABLE_TTS_MODEL_DIR = APP_DIR / "models" / "Qwen3-TTS-1.7B"
-WEB_TTS_MODEL_DIR = Path("D:/Codex/workspaces/ai_media_assistant/models/Qwen3-TTS-1.7B")
-LEGACY_TTS_MODEL_DIR = Path("E:/Qwen3-TTS-1.7B/Qwen3-TTS-1.7B")
+WEB_TTS_MODEL_DIR = WEB_PROJECT_ROOT / "models" / "Qwen3-TTS-1.7B"
+LEGACY_TTS_MODEL_DIR = Path("E:/Qwen3-TTS-1.7B/Qwen3-TTS-1.7B") if os.name == "nt" else WEB_PROJECT_ROOT / "models" / "Qwen3-TTS-1.7B"
 DEFAULT_TTS_MODEL_DIR = PORTABLE_TTS_MODEL_DIR if PORTABLE_TTS_MODEL_DIR.exists() else (WEB_TTS_MODEL_DIR if WEB_TTS_MODEL_DIR.exists() else LEGACY_TTS_MODEL_DIR)
-TTS_HELPER_PATH = Path("D:/Codex/cache/tmp/ai_media_assistant_qwen_tts_helper.py")
+TTS_HELPER_PATH = WEB_PROJECT_ROOT / "storage" / "projects" / "ai_media_assistant_qwen_tts_helper.py"
 RESULT_PREFIX = "__AI_CAPTION_QWEN_RESULT__ "
 
 
@@ -42,7 +43,7 @@ class TTSGenerationCancelled(RuntimeError):
 class QwenTTSWorker:
     def __init__(self, model_dir: Path) -> None:
         self.model_dir = Path(model_dir)
-        self.python_exe = self.model_dir / "conda_env" / "python.exe"
+        self.python_exe = qwen_python_for_model(self.model_dir)
         self.process: subprocess.Popen[str] | None = None
         self.lock = threading.Lock()
 
@@ -146,7 +147,7 @@ def generate_tts_audio(texts: list[str], output_dir: Path, options: TTSOptions, 
         return []
 
     model_dir = resolve_qwen_model_dir(options.model_dir)
-    python_exe = model_dir / "conda_env" / "python.exe"
+    python_exe = qwen_python_for_model(model_dir)
     if not model_dir.exists():
         raise FileNotFoundError(f"TTS 模型目录不存在：{model_dir}")
     if not python_exe.exists():
@@ -224,10 +225,25 @@ def _get_worker(model_dir: Path) -> QwenTTSWorker:
 def _is_qwen_model_dir(path: Path) -> bool:
     return (
         path.exists()
-        and (path / "conda_env" / "python.exe").exists()
+        and qwen_python_for_model(path).exists()
         and (path / "Qwen").exists()
         and (path / "qwen_tts").exists()
     )
+
+
+def qwen_python_for_model(model_dir: Path) -> Path:
+    candidates = [
+        model_dir / "conda_env" / "python.exe",
+        model_dir / "conda_env" / "bin" / "python",
+        model_dir / ".venv" / "Scripts" / "python.exe",
+        model_dir / ".venv" / "bin" / "python",
+        model_dir / "venv" / "Scripts" / "python.exe",
+        model_dir / "venv" / "bin" / "python",
+    ]
+    for path in candidates:
+        if path.exists():
+            return path
+    return candidates[0]
 
 
 def _tts_env(model_dir: Path) -> dict[str, str]:
@@ -236,10 +252,12 @@ def _tts_env(model_dir: Path) -> dict[str, str]:
     paths = [
         conda_env,
         conda_env / "Scripts",
+        conda_env / "bin",
         conda_env / "ffmpeg" / "bin",
         conda_env / "sox",
     ]
-    env["PATH"] = ";".join(str(path) for path in paths) + ";" + env.get("PATH", "")
+    separator = os.pathsep
+    env["PATH"] = separator.join(str(path) for path in paths) + separator + env.get("PATH", "")
     env["PYTHONHOME"] = ""
     env["PYTHONPATH"] = ""
     env["HF_HOME"] = str(model_dir / "hf_download")
