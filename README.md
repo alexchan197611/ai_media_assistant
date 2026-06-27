@@ -11,14 +11,14 @@ AI Media Assistant Web 是一款面向中文内容创作者的本地短视频生
 <p align="center">
   <a href="https://github.com/alexchan197611/ai_caption_video/raw/main/docs/images/demo2.mp4"><img src="docs/images/emotion-demo.png" alt="点击播放情感模板演示视频" width="48%"></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/alexchan197611/ai_caption_video/raw/main/docs/images/20260621015056.mp4"><img src="docs/images/ancient-demo.png" alt="点击播放古风模板演示视频" width="48%"></a>
+  <a href="https://github.com/user-attachments/assets/c6010d8a-5c08-4af2-81dc-150750757820"><img src="docs/images/ancient-demo.png" alt="点击播放古风模板演示视频" width="48%"></a>
 </p>
 
 情感模板演示视频：
 https://github.com/alexchan197611/ai_caption_video/raw/main/docs/images/demo2.mp4
 
 古风模板演示视频：
-https://github.com/alexchan197611/ai_caption_video/raw/main/docs/images/20260621015056.mp4
+https://github.com/user-attachments/assets/c6010d8a-5c08-4af2-81dc-150750757820
 
 
 - [观看 B 站视频演示](https://www.bilibili.com/video/BV18y7P66EAQ)
