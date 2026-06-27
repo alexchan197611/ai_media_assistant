@@ -127,7 +127,7 @@ ai-media-assistant/
       ...
 ```
 
-Windows 和 macOS 的模型运行环境不能混用。Windows 模型包里的 `python.exe`、`.dll`、`.pyd` 不能在 macOS 上执行；Mac 用户需要使用 macOS arm64 版模型包。维护者可在 Mac 上运行 `scripts/macos_models/build_all_macos.sh` 制作 `dist/ai-media-assistant-models-macos-arm64.zip`。
+Windows 和 macOS 的模型运行环境不能混用。Windows 模型包里的 `python.exe`、`.dll`、`.pyd` 不能在 macOS 上执行；Mac 用户需要使用 macOS arm64 版模型包。维护者可在 Mac 上运行 `scripts/macos_models/build_all_macos.sh` 制作 `dist/OmniVoice-macos-arm64.zip`、`dist/Qwen3-TTS-1.7B-macos-arm64.zip` 和一个合包。
 
 ## 本地资源
 

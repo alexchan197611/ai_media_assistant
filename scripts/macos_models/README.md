@@ -51,10 +51,12 @@ chmod +x scripts/macos_models/*.sh
 脚本会生成：
 
 ```text
+dist/OmniVoice-macos-arm64.zip
+dist/Qwen3-TTS-1.7B-macos-arm64.zip
 dist/ai-media-assistant-models-macos-arm64.zip
 ```
 
-把这个 zip 发给 Mac 用户。用户解压后把里面的 `OmniVoice` 和 `Qwen3-TTS-1.7B` 放进软件的 `models` 目录即可。
+可以分别发布两个模型包，也可以发布合包。用户解压后把里面的 `OmniVoice` 和 `Qwen3-TTS-1.7B` 放进软件的 `models` 目录即可。
 
 ## 注意
 
