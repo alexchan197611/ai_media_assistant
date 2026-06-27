@@ -5,7 +5,9 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models import Asset, AssetKind, Project
+from app.services.background_matcher import BackgroundResource, choose_best_resource
 from app.services.media_jobs import font_path_for_project, make_video_config
+from pathlib import Path
 
 engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=__import__("sqlalchemy").pool.StaticPool)
 TestingSession = sessionmaker(bind=engine, expire_on_commit=False)
@@ -142,6 +144,48 @@ def test_senior_emotion_template_auto_matches_unique_backgrounds():
         assets = [db.get(Asset, asset_id) for asset_id in background_ids]
     assert all(asset is not None and asset.kind == AssetKind.image for asset in assets)
     assert any("broll" in asset.original_name or "elder" in asset.original_name for asset in assets)
+
+def test_emotion_background_matching_varies_by_project_seed():
+    resources = [
+        BackgroundResource(
+            id=f"resource-{index}",
+            file=f"resource-{index}.png",
+            path=Path(f"resource-{index}.png"),
+            title_zh="家人陪伴",
+            scene="family",
+            emotions=("warm",),
+            keywords_zh=("家", "陪伴"),
+            keywords_en=(),
+            match_text_types=(),
+        )
+        for index in range(1, 5)
+    ]
+    first = choose_best_resource("家人常回家陪伴", resources, set(), "project-a", "segment-1")
+    repeated = choose_best_resource("家人常回家陪伴", resources, set(), "project-a", "segment-1")
+    another_project = choose_best_resource("家人常回家陪伴", resources, set(), "project-d", "segment-1")
+
+    assert first == repeated
+    assert first.id != another_project.id
+
+def test_emotion_background_matching_respects_current_project_used_images():
+    resources = [
+        BackgroundResource(
+            id=f"resource-{index}",
+            file=f"resource-{index}.png",
+            path=Path(f"resource-{index}.png"),
+            title_zh="家人陪伴",
+            scene="family",
+            emotions=("warm",),
+            keywords_zh=("家", "陪伴"),
+            keywords_en=(),
+            match_text_types=(),
+        )
+        for index in range(1, 4)
+    ]
+    first = choose_best_resource("家人常回家陪伴", resources, set(), "project-a", "segment-1")
+    second = choose_best_resource("家人常回家陪伴", resources, {first.id}, "project-a", "segment-2")
+
+    assert first.id != second.id
 
 def test_media_jobs_can_be_enqueued():
     segment_id = "9a01f4f5-279e-4662-b0ac-78b68d251dc2"

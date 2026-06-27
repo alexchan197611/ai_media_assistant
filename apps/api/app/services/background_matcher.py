@@ -61,7 +61,7 @@ def apply_emotion_backgrounds(db: Session, project: Project) -> None:
             continue
         if segment.background_asset_id and not _is_replaceable_asset(db, segment.background_asset_id, global_resource_paths):
             continue
-        resource = choose_best_resource(segment.text, resources, used_resource_ids)
+        resource = choose_best_resource(segment.text, resources, used_resource_ids, project.id, segment.id)
         used_resource_ids.add(resource.id)
         asset = ensure_resource_asset(db, resource)
         if asset.id in used_asset_ids:
@@ -100,11 +100,21 @@ def load_background_resources() -> list[BackgroundResource]:
     return resources
 
 
-def choose_best_resource(text: str, resources: list[BackgroundResource], used_resource_ids: set[str]) -> BackgroundResource:
+def choose_best_resource(
+    text: str,
+    resources: list[BackgroundResource],
+    used_resource_ids: set[str],
+    project_id: str = "",
+    segment_id: str = "",
+) -> BackgroundResource:
     available = [resource for resource in resources if resource.id not in used_resource_ids] or resources
     normalized = normalize_text(text)
-    best = max(available, key=lambda resource: (score_resource(normalized, resource), -available.index(resource)))
-    return best
+    scored = [(score_resource(normalized, resource), resource) for resource in available]
+    best_score = max(score for score, _resource in scored)
+    score_window = 6 if best_score > 0 else 0
+    candidates = [resource for score, resource in scored if score >= best_score - score_window]
+    seed = f"{project_id}:{segment_id}:{normalized}"
+    return min(candidates, key=lambda resource: _stable_int(f"{seed}:{resource.id}"))
 
 
 def score_resource(text: str, resource: BackgroundResource) -> int:
