@@ -6,8 +6,25 @@ cd "$ROOT"
 
 echo "== AI Media Assistant Web 2.0 setup =="
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "未找到 Python。请先安装 Python 3.11+。" >&2
+PYTHON_BIN=""
+for candidate in python3.12 python3.11 python3; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    if "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
+      PYTHON_BIN="$candidate"
+      break
+    fi
+  fi
+done
+
+if [ -z "$PYTHON_BIN" ]; then
+  echo "未找到 Python 3.11+。" >&2
+  echo "请先安装 Python 3.11 或 3.12，然后重新运行本脚本。" >&2
+  echo "" >&2
+  echo "推荐方法一：到官网下载并安装 Python 3.12" >&2
+  echo "https://www.python.org/downloads/macos/" >&2
+  echo "" >&2
+  echo "推荐方法二：如果已经安装 Homebrew，可运行：" >&2
+  echo "brew install python@3.12" >&2
   exit 1
 fi
 
@@ -16,12 +33,17 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Python: $(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+echo "Python: $("$PYTHON_BIN" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")') ($PYTHON_BIN)"
 echo "Node: $(node -v)"
+
+if [ -x ".venv/bin/python" ] && ! .venv/bin/python -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
+  echo "检测到旧的 .venv 使用了 Python 3.10 或更低版本，正在重建..."
+  rm -rf .venv
+fi
 
 if [ ! -x ".venv/bin/python" ]; then
   echo "Creating Python virtual environment..."
-  python3 -m venv .venv
+  "$PYTHON_BIN" -m venv .venv
 fi
 
 echo "Installing Python dependencies..."

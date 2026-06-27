@@ -105,6 +105,8 @@ http://127.0.0.1:8123
 - FFmpeg，建议加入系统 PATH
 - 可选：OmniVoice / Qwen3-TTS 模型环境
 
+macOS 注意：系统自带的 Python 可能是 3.9，不能用于本项目。请安装 Python 3.11+，例如到 [Python 官网](https://www.python.org/downloads/macos/) 安装 Python 3.12，或使用 Homebrew 运行 `brew install python@3.12`。
+
 模型权重不包含在仓库和 Release 包中，需要用户自行准备。右上角“设置”中可以配置模型位置。
 
 ## 本地资源
