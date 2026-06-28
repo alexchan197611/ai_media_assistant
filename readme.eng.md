@@ -6,7 +6,7 @@
 
 <p align="right">
 
-English | [简体中文](READM.md)
+English | [简体中文](README.md)
 
 </p>
 
