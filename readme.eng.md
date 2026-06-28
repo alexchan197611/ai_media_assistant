@@ -4,6 +4,12 @@
 
 > **Formerly known as `ai_caption_video`**
 
+<p align="right">
+
+English | [简体中文](READM.md)
+
+</p>
+
 AI Media Assistant is an open-source AI-powered video creation platform designed for content creators. It helps users transform scripts into professional subtitle videos with AI voice synthesis, automatic subtitle rendering, background image management, background music, and one-click video export.
 
 Originally released as **ai_caption_video**, the project has been renamed to **AI Media Assistant** to reflect its broader vision of becoming a complete AI content creation platform.
