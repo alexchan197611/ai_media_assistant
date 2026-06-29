@@ -16,6 +16,8 @@ EMOTION_TEMPLATE_ID = "senior-emotion"
 RESOURCE_DIRS = [
     ROOT / "storage" / "resources" / "bg_B-Roll_Senior_Emotions",
     ROOT / "storage" / "resources" / "bg_elder_person",
+    ROOT / "storage" / "resources" / "bg_kitchen",
+    ROOT / "storage" / "resources" / "bg_plant",
 ]
 
 SCENE_HINTS: dict[str, list[str]] = {
