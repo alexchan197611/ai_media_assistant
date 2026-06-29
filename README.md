@@ -23,7 +23,7 @@ https://github.com/user-attachments/assets/1332d442-f919-4064-ad73-bb960943f4ea
 https://github.com/user-attachments/assets/c6010d8a-5c08-4af2-81dc-150750757820
 
 
-- [观看 B 站视频演示]([https://www.bilibili.com/video/BV18y7P66EAQ](https://www.bilibili.com/video/BV1kgKD6FEgB))
+- [观看 B 站视频演示](https://www.bilibili.com/video/BV1kgKD6FEgB)
 
   新的教程视频正在录制中，很快会和大家见面，到B站视频评论区里看看夸克网盘下载链接。
   
