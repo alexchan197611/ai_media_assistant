@@ -1,20 +1,21 @@
 import type { Asset, Job, ModelStatus, MusicTrack, Project, ProjectSummary, VoicePreset, WorkerStatus } from './types'
+import { getStoredLanguage } from './i18n'
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`/api${path}`, { headers: { 'Content-Type': 'application/json' }, ...init })
-  if (!response.ok) throw new Error((await response.json().catch(() => null))?.detail ?? '请求失败')
+  const response = await fetch(`/api${path}`, { headers: { 'Content-Type': 'application/json', 'Accept-Language': getStoredLanguage() }, ...init })
+  if (!response.ok) throw new Error((await response.json().catch(() => null))?.detail ?? (getStoredLanguage() === 'en' ? 'Request failed' : '请求失败'))
   return response.status === 204 ? undefined as T : response.json()
 }
 async function upload<T>(path: string, file: File): Promise<T> {
   const form = new FormData()
   form.append('file', file)
-  const response = await fetch(`/api${path}`, { method: 'POST', body: form })
-  if (!response.ok) throw new Error((await response.json().catch(() => null))?.detail ?? '上传失败')
+  const response = await fetch(`/api${path}`, { method: 'POST', headers: { 'Accept-Language': getStoredLanguage() }, body: form })
+  if (!response.ok) throw new Error((await response.json().catch(() => null))?.detail ?? (getStoredLanguage() === 'en' ? 'Upload failed' : '上传失败'))
   return response.json()
 }
 export const api = {
   listProjects: () => request<ProjectSummary[]>('/projects'),
   getProject: (id: string) => request<Project>(`/projects/${id}`),
-  createProject: (name = '未命名项目') => request<Project>('/projects', { method: 'POST', body: JSON.stringify({ name, segments: [] }) }),
+  createProject: (name = getStoredLanguage() === 'en' ? 'Untitled video' : '未命名项目') => request<Project>('/projects', { method: 'POST', body: JSON.stringify({ name, segments: [] }) }),
   updateProject: (project: Project) => request<Project>(`/projects/${project.id}`, { method: 'PATCH', body: JSON.stringify({ name: project.name, canvas: project.canvas, template_id: project.template_id, tts_settings: project.tts_settings, bgm_settings: project.bgm_settings, segments: project.segments }) }),
   duplicateProject: (id: string) => request<Project>(`/projects/${id}/duplicate`, { method: 'POST' }),
   deleteProject: (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' }),
