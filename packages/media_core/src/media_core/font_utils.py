@@ -7,8 +7,6 @@ from .legacy_config import ANCIENT_FALLBACK_FONT, ANCIENT_FONT, BUNDLE_ROOT
 
 WINDOWS_FONT_DIR = Path("C:/Windows/Fonts")
 FONT_PATH_CANDIDATES = [
-    BUNDLE_ROOT / "fonts" / "ZhiMangXing-Regular.ttf",
-    BUNDLE_ROOT / "fonts" / "HYShangWeiShouShu.ttf",
     WINDOWS_FONT_DIR / "msyhbd.ttc",
     WINDOWS_FONT_DIR / "simheib.ttf",
     WINDOWS_FONT_DIR / "simhei.ttf",
