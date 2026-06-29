@@ -36,9 +36,9 @@ https://github.com/user-attachments/assets/c6010d8a-5c08-4af2-81dc-150750757820
 
 🎬 **Video Tutorial (Chinese)**
 
-https://www.bilibili.com/video/BV18y7P66EAQ
+[https://www.bilibili.com/video/BV18y7P66EAQ](https://www.bilibili.com/video/BV1kgKD6FEgB)
 
-A new tutorial series is currently being recorded and will be released soon.
+
 
 ---
 
