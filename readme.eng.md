@@ -23,7 +23,7 @@ The built-in web interface is served only on **127.0.0.1**, making it ideal for 
 # Screenshot
 
 <p align="center">
-  <img src="docs/images/main-gui.png" alt="AI Media Assistant Web" width="100%">
+ <img width="3200" height="1662" alt="gui-main-eng" src="https://github.com/user-attachments/assets/ecadc5a6-d4f5-4a39-bf6e-b526f972f770" />
 </p>
 
 ---
